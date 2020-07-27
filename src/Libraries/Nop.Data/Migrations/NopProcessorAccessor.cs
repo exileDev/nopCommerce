@@ -34,6 +34,9 @@ namespace Nop.Data.Migrations
                     case DataProviderType.MySql:
                         Processor = FindGenerator(procs, "MySQL");
                         break;
+                    case DataProviderType.PostgreSQL:
+                        Processor = FindGenerator(procs, "Postgres");
+                        break;
                     default:
                         throw new ProcessorFactoryNotFoundException($@"A migration generator for Data provider type {dataSettings.DataProvider} couldn't be found.");
                 }

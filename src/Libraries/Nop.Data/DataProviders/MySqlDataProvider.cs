@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Data.SqlClient;
+using System.Data.Common;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -9,19 +9,43 @@ using System.Threading;
 using LinqToDB;
 using LinqToDB.Data;
 using LinqToDB.DataProvider;
-using LinqToDB.DataProvider.SqlServer;
+using LinqToDB.DataProvider.MySql;
+using LinqToDB.SqlQuery;
+using MySql.Data.MySqlClient;
 using Nop.Core;
 using Nop.Core.Infrastructure;
 using Nop.Data.Migrations;
 
-namespace Nop.Data
+namespace Nop.Data.DataProviders
 {
-    /// <summary>
-    /// Represents the MS SQL Server data provider
-    /// </summary>
-    public partial class MsSqlNopDataProvider : BaseDataProvider, INopDataProvider
+    public class MySqlNopDataProvider : BaseDataProvider, INopDataProvider
     {
+        #region Fields
+
+        //it's quite fast hash (to cheaply distinguish between objects)
+        private const string HASH_ALGORITHM = "SHA1";
+
+        #endregion
+
         #region Utils
+
+        /// <summary>
+        /// Configures the data context
+        /// </summary>
+        /// <param name="dataContext">Data context to configure</param>
+        private void ConfigureDataContext(IDataContext dataContext)
+        {
+            AdditionalSchema.SetDataType(
+                typeof(Guid),
+                new SqlDataType(DataType.NChar, typeof(Guid), 36));
+
+            AdditionalSchema.SetConvertExpression<string, Guid>(strGuid => new Guid(strGuid));
+        }
+
+        protected MySqlConnectionStringBuilder GetConnectionStringBuilder()
+        {
+            return new MySqlConnectionStringBuilder(CurrentConnectionString);
+        }
 
         /// <summary>
         /// Get SQL commands from the script
@@ -32,42 +56,50 @@ namespace Nop.Data
         {
             var commands = new List<string>();
 
-            //origin from the Microsoft.EntityFrameworkCore.Migrations.SqlServerMigrationsSqlGenerator.Generate method
-            sql = Regex.Replace(sql, @"\\\r?\n", string.Empty);
-            var batches = Regex.Split(sql, @"^\s*(GO[ \t]+[0-9]+|GO)(?:\s+|$)", RegexOptions.IgnoreCase | RegexOptions.Multiline);
+            var batches = Regex.Split(sql, @"DELIMITER \;", RegexOptions.IgnoreCase | RegexOptions.Multiline);
 
-            for (var i = 0; i < batches.Length; i++)
+            if (batches.Length > 0)
             {
-                if (string.IsNullOrWhiteSpace(batches[i]) || batches[i].StartsWith("GO", StringComparison.OrdinalIgnoreCase))
-                    continue;
+                commands.AddRange(
+                    batches
+                        .Where(b => !string.IsNullOrWhiteSpace(b))
+                        .Select(b =>
+                        {
+                            b = Regex.Replace(b, @"(DELIMITER )?\$\$", string.Empty);
+                            b = Regex.Replace(b, @"#(.*?)\r?\n", "/* $1 */");
+                            b = Regex.Replace(b, @"(\r?\n)|(\t)", " ");
 
-                var count = 1;
-                if (i != batches.Length - 1 && batches[i + 1].StartsWith("GO", StringComparison.OrdinalIgnoreCase))
-                {
-                    var match = Regex.Match(batches[i + 1], "([0-9]+)");
-                    if (match.Success)
-                        count = int.Parse(match.Value);
-                }
-
-                var builder = new StringBuilder();
-                for (var j = 0; j < count; j++)
-                {
-                    builder.Append(batches[i]);
-                    if (i == batches.Length - 1)
-                        builder.AppendLine();
-                }
-
-                commands.Add(builder.ToString());
+                            return b;
+                        }));
             }
 
             return commands;
         }
 
-        protected virtual SqlConnectionStringBuilder GetConnectionStringBuilder()
+        /// <summary>
+        /// Execute commands from a file with SQL script against the context database
+        /// </summary>
+        /// <param name="fileProvider">File provider</param>
+        /// <param name="filePath">Path to the file</param>
+        protected void ExecuteSqlScriptFromFile(INopFileProvider fileProvider, string filePath)
         {
-            var connectionString = DataSettingsManager.LoadSettings().ConnectionString;
+            filePath = fileProvider.MapPath(filePath);
+            if (!fileProvider.FileExists(filePath))
+                return;
 
-            return new SqlConnectionStringBuilder(connectionString);
+            ExecuteSqlScript(fileProvider.ReadAllText(filePath, Encoding.Default));
+        }
+
+        /// <summary>
+        /// Creates the database connection
+        /// </summary>
+        protected override DataConnection CreateDataConnection()
+        {
+            var dataContext = CreateDataConnection(LinqToDbDataProvider);
+
+            ConfigureDataContext(dataContext);
+
+            return dataContext;
         }
 
         #endregion
@@ -81,17 +113,17 @@ namespace Nop.Data
         /// <returns>Connection to a database</returns>
         protected override IDbConnection GetInternalDbConnection(string connectionString)
         {
-            if(string.IsNullOrEmpty(connectionString))
+            if (string.IsNullOrEmpty(connectionString))
                 throw new ArgumentException(nameof(connectionString));
 
-            return new SqlConnection(connectionString);
+            return new MySqlConnection(connectionString);
         }
 
         /// <summary>
-        /// Create the database
+        /// Creates the database by using the loaded connection string
         /// </summary>
-        /// <param name="collation">Collation</param>
-        /// <param name="triesToConnect">Count of tries to connect to the database after creating; set 0 if no need to connect after creating</param>
+        /// <param name="collation"></param>
+        /// <param name="triesToConnect"></param>
         public void CreateDatabase(string collation, int triesToConnect = 10)
         {
             if (DatabaseExists())
@@ -100,18 +132,19 @@ namespace Nop.Data
             var builder = GetConnectionStringBuilder();
 
             //gets database name
-            var databaseName = builder.InitialCatalog;
+            var databaseName = builder.Database;
 
-            //now create connection string to 'master' dabatase. It always exists.
-            builder.InitialCatalog = "master";
+            //now create connection string to 'master' database. It always exists.
+            builder.Database = null;
 
-            using (var connection = new SqlConnection(builder.ConnectionString))
+            using (var connection = CreateDbConnection(builder.ConnectionString))
             {
-                var query = $"CREATE DATABASE [{databaseName}]";
+                var query = $"CREATE DATABASE IF NOT EXISTS {databaseName};";
                 if (!string.IsNullOrWhiteSpace(collation))
                     query = $"{query} COLLATE {collation}";
 
-                var command = new SqlCommand(query, connection);
+                var command = connection.CreateCommand();
+                command.CommandText = query;
                 command.Connection.Open();
 
                 command.ExecuteNonQuery();
@@ -145,7 +178,7 @@ namespace Nop.Data
         {
             try
             {
-                using (var connection = new SqlConnection(GetConnectionStringBuilder().ConnectionString))
+                using (var connection = CreateDbConnection())
                 {
                     //just try to connect
                     connection.Open();
@@ -160,27 +193,12 @@ namespace Nop.Data
         }
 
         /// <summary>
-        /// Execute commands from a file with SQL script against the context database
-        /// </summary>
-        /// <param name="fileProvider">File provider</param>
-        /// <param name="filePath">Path to the file</param>
-        protected void ExecuteSqlScriptFromFile(INopFileProvider fileProvider, string filePath)
-        {
-            filePath = fileProvider.MapPath(filePath);
-            if (!fileProvider.FileExists(filePath))
-                return;
-
-            ExecuteSqlScript(fileProvider.ReadAllText(filePath, Encoding.Default));
-        }
-
-        /// <summary>
         /// Execute commands from the SQL script
         /// </summary>
         /// <param name="sql">SQL script</param>
         public void ExecuteSqlScript(string sql)
         {
             var sqlCommands = GetCommandsFromScript(sql);
-
             using var currentConnection = CreateDataConnection();
             foreach (var command in sqlCommands)
                 currentConnection.Execute(command);
@@ -196,7 +214,7 @@ namespace Nop.Data
 
             //create stored procedures 
             var fileProvider = EngineContext.Current.Resolve<INopFileProvider>();
-            ExecuteSqlScriptFromFile(fileProvider, NopDataDefaults.SqlServerStoredProceduresFilePath);
+            ExecuteSqlScriptFromFile(fileProvider, NopDataDefaults.MySQLStoredProceduresFilePath);
         }
 
         /// <summary>
@@ -206,13 +224,42 @@ namespace Nop.Data
         /// <returns>Integer identity; null if cannot get the result</returns>
         public virtual int? GetTableIdent<T>() where T : BaseEntity
         {
-            using var currentConnection = CreateDataConnection();
-            var tableName = currentConnection.GetTable<T>().TableName;
+            using (var currentConnection = CreateDataConnection())
+            {
+                var tableName = currentConnection.GetTable<T>().TableName;
+                var databaseName = currentConnection.Connection.Database;
 
-            var result = currentConnection.Query<decimal?>($"SELECT IDENT_CURRENT('[{tableName}]') as Value")
-                .FirstOrDefault();
+                //we're using the DbConnection object until linq2db solve this issue https://github.com/linq2db/linq2db/issues/1987
+                //with DataContext we could be used KeepConnectionAlive option
+                using var dbConnerction = (DbConnection)CreateDbConnection();
 
-            return result.HasValue ? Convert.ToInt32(result) : 1;
+                dbConnerction.StateChange += (sender, e) =>
+                {
+                    try
+                    {
+                        if (e.CurrentState != ConnectionState.Open)
+                            return;
+
+                        var connection = (IDbConnection)sender;
+                        using var command = connection.CreateCommand();
+                        command.Connection = connection;
+                        command.CommandText = $"SET @@SESSION.information_schema_stats_expiry = 0;";
+                        command.ExecuteNonQuery();
+                    }
+                    //ignoring for older than 8.0 versions MySQL (#1193 Unknown system variable)
+                    catch (MySqlException ex) when (ex.Number == 1193)
+                    {
+                        //ignore
+                    }
+                };
+
+                using var command = dbConnerction.CreateCommand();
+                command.Connection = dbConnerction;
+                command.CommandText = $"SELECT AUTO_INCREMENT FROM information_schema.TABLES WHERE TABLE_SCHEMA = '{databaseName}' AND TABLE_NAME = '{tableName}'";
+                dbConnerction.Open();
+
+                return Convert.ToInt32(command.ExecuteScalar() ?? 1);
+            }
         }
 
         /// <summary>
@@ -222,14 +269,14 @@ namespace Nop.Data
         /// <param name="ident">Identity value</param>
         public virtual void SetTableIdent<T>(int ident) where T : BaseEntity
         {
-            using var currentConnection = CreateDataConnection();
             var currentIdent = GetTableIdent<T>();
             if (!currentIdent.HasValue || ident <= currentIdent.Value)
                 return;
 
+            using var currentConnection = CreateDataConnection();
             var tableName = currentConnection.GetTable<T>().TableName;
 
-            currentConnection.Execute($"DBCC CHECKIDENT([{tableName}], RESEED, {ident})");
+            currentConnection.Execute($"ALTER TABLE `{tableName}` AUTO_INCREMENT = {ident};");
         }
 
         /// <summary>
@@ -237,9 +284,7 @@ namespace Nop.Data
         /// </summary>
         public virtual void BackupDatabase(string fileName)
         {
-            using var currentConnection = CreateDataConnection();
-            var commandText = $"BACKUP DATABASE [{currentConnection.Connection.Database}] TO DISK = '{fileName}' WITH FORMAT";
-            currentConnection.Execute(commandText);
+            throw new DataException("This database provider does not support backup");
         }
 
         /// <summary>
@@ -248,25 +293,7 @@ namespace Nop.Data
         /// <param name="backupFileName">The name of the backup file</param>
         public virtual void RestoreDatabase(string backupFileName)
         {
-            using var currentConnection = CreateDataConnection();
-            var commandText = string.Format(
-                "DECLARE @ErrorMessage NVARCHAR(4000)\n" +
-                "ALTER DATABASE [{0}] SET OFFLINE WITH ROLLBACK IMMEDIATE\n" +
-                "BEGIN TRY\n" +
-                "RESTORE DATABASE [{0}] FROM DISK = '{1}' WITH REPLACE\n" +
-                "END TRY\n" +
-                "BEGIN CATCH\n" +
-                "SET @ErrorMessage = ERROR_MESSAGE()\n" +
-                "END CATCH\n" +
-                "ALTER DATABASE [{0}] SET MULTI_USER WITH ROLLBACK IMMEDIATE\n" +
-                "IF (@ErrorMessage is not NULL)\n" +
-                "BEGIN\n" +
-                "RAISERROR (@ErrorMessage, 16, 1)\n" +
-                "END",
-                currentConnection.Connection.Database,
-                backupFileName);
-
-            currentConnection.Execute(commandText);
+            throw new DataException("This database provider does not support backup");
         }
 
         /// <summary>
@@ -275,23 +302,12 @@ namespace Nop.Data
         public virtual void ReIndexTables()
         {
             using var currentConnection = CreateDataConnection();
-            var commandText = $@"
-                    DECLARE @TableName sysname 
-                    DECLARE cur_reindex CURSOR FOR
-                    SELECT table_name
-                    FROM [{currentConnection.Connection.Database}].information_schema.tables
-                    WHERE table_type = 'base table'
-                    OPEN cur_reindex
-                    FETCH NEXT FROM cur_reindex INTO @TableName
-                    WHILE @@FETCH_STATUS = 0
-                        BEGIN
-                            exec('ALTER INDEX ALL ON [' + @TableName + '] REBUILD')
-                            FETCH NEXT FROM cur_reindex INTO @TableName
-                        END
-                    CLOSE cur_reindex
-                    DEALLOCATE cur_reindex";
+            var tables = currentConnection.Query<string>($"SHOW TABLES FROM `{currentConnection.Connection.Database}`").ToList();
 
-            currentConnection.Execute(commandText);
+            if (tables.Count > 0)
+            {
+                currentConnection.Execute($"OPTIMIZE TABLE `{string.Join("`, `", tables)}`");
+            }
         }
 
         /// <summary>
@@ -304,19 +320,18 @@ namespace Nop.Data
             if (nopConnectionString is null)
                 throw new ArgumentNullException(nameof(nopConnectionString));
 
-            var builder = new SqlConnectionStringBuilder
-            {
-                DataSource = nopConnectionString.ServerName,
-                InitialCatalog = nopConnectionString.DatabaseName,
-                PersistSecurityInfo = false,
-                IntegratedSecurity = nopConnectionString.IntegratedSecurity
-            };
+            if (nopConnectionString.IntegratedSecurity)
+                throw new NopException("Data provider supports connection only with login and password");
 
-            if (!nopConnectionString.IntegratedSecurity)
+            var builder = new MySqlConnectionStringBuilder
             {
-                builder.UserID = nopConnectionString.Username;
-                builder.Password = nopConnectionString.Password;
-            }
+                Server = nopConnectionString.ServerName,
+                //Cast DatabaseName to lowercase to avoid case-sensitivity problems
+                Database = nopConnectionString.DatabaseName.ToLower(),
+                AllowUserVariables = true,
+                UserID = nopConnectionString.Username,
+                Password = nopConnectionString.Password,
+            };
 
             return builder.ConnectionString;
         }
@@ -331,7 +346,10 @@ namespace Nop.Data
         /// <returns>Name of a foreign key</returns>
         public virtual string CreateForeignKeyName(string foreignTable, string foreignColumn, string primaryTable, string primaryColumn)
         {
-            return $"FK_{foreignTable}_{foreignColumn}_{primaryTable}_{primaryColumn}";
+            //mySql support only 64 chars for constraint name
+            //that is why we use hash function for create unique name
+            //see details on this topic: https://dev.mysql.com/doc/refman/8.0/en/identifier-length.html
+            return "FK_" + HashHelper.CreateHash(Encoding.UTF8.GetBytes($"{foreignTable}_{foreignColumn}_{primaryTable}_{primaryColumn}"), HASH_ALGORITHM);
         }
 
         /// <summary>
@@ -342,7 +360,7 @@ namespace Nop.Data
         /// <returns>Name of an index</returns>
         public virtual string GetIndexName(string targetTable, string targetColumn)
         {
-            return $"IX_{targetTable}_{targetColumn}";
+            return "IX_" + HashHelper.CreateHash(Encoding.UTF8.GetBytes($"{targetTable}_{targetColumn}"), HASH_ALGORITHM);
         }
 
         #endregion
@@ -350,19 +368,19 @@ namespace Nop.Data
         #region Properties
 
         /// <summary>
-        /// Sql server data provider
+        /// MySql data provider
         /// </summary>
-        protected override IDataProvider LinqToDbDataProvider => new SqlServerDataProvider(ProviderName.SqlServer, SqlServerVersion.v2008);
+        protected override IDataProvider LinqToDbDataProvider => new MySqlDataProvider();
 
         /// <summary>
         /// Gets allowed a limit input value of the data for hashing functions, returns 0 if not limited
         /// </summary>
-        public int SupportedLengthOfBinaryHash { get; } = 8000;
+        public int SupportedLengthOfBinaryHash { get; } = 0;
 
         /// <summary>
         /// Gets a value indicating whether this data provider supports backup
         /// </summary>
-        public virtual bool BackupSupported => true;
+        public virtual bool BackupSupported => false;
 
         #endregion
     }

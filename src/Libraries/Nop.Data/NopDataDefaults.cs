@@ -14,5 +14,11 @@
         /// Gets a path to the file that contains script to create MySQL stored procedures
         /// </summary>
         public static string MySQLStoredProceduresFilePath => "~/App_Data/Install/MySQL.StoredProcedures.sql";
+
+        
+        /// <summary>
+        /// Gets a path to the file that contains script to create MySQL stored procedures
+        /// </summary>
+        public static string PostgreSQLFunctionsFilePath => "~/App_Data/Install/PostgreSQL.Functions.sql";
     }
 }

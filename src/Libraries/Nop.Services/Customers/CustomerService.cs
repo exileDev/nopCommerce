@@ -32,6 +32,7 @@ namespace Nop.Services.Customers
         private readonly ICacheKeyService _cacheKeyService;
         private readonly IEventPublisher _eventPublisher;
         private readonly IGenericAttributeService _genericAttributeService;
+        private readonly INopDataProvider _dataProvider;
         private readonly IRepository<Address> _customerAddressRepository;
         private readonly IRepository<Customer> _customerRepository;
         private readonly IRepository<CustomerAddressMapping> _customerAddressMappingRepository;
@@ -53,6 +54,7 @@ namespace Nop.Services.Customers
             ICacheKeyService cacheKeyService,
             IEventPublisher eventPublisher,
             IGenericAttributeService genericAttributeService,
+            INopDataProvider dataProvider,
             IRepository<Address> customerAddressRepository,
             IRepository<Customer> customerRepository,
             IRepository<CustomerAddressMapping> customerAddressMappingRepository,
@@ -70,6 +72,7 @@ namespace Nop.Services.Customers
             _cacheKeyService = cacheKeyService;
             _eventPublisher = eventPublisher;
             _genericAttributeService = genericAttributeService;
+            _dataProvider = dataProvider;
             _customerAddressRepository = customerAddressRepository;
             _customerRepository = customerRepository;
             _customerAddressMappingRepository = customerAddressMappingRepository;
@@ -684,7 +687,7 @@ namespace Nop.Services.Customers
             var pTotalRecordsDeleted = SqlParameterHelper.GetOutputInt32Parameter("TotalRecordsDeleted");
 
             //invoke stored procedure
-            _customerRepository.EntityFromSql("DeleteGuests", pOnlyWithoutShoppingCart,
+            _dataProvider.ExecuteStoredProcedure("DeleteGuests", pOnlyWithoutShoppingCart,
                 pCreatedFromUtc,
                 pCreatedToUtc,
                 pTotalRecordsDeleted);

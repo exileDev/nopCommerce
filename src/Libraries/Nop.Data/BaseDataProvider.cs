@@ -8,6 +8,7 @@ using LinqToDB;
 using LinqToDB.Data;
 using LinqToDB.DataProvider;
 using LinqToDB.Mapping;
+using LinqToDB.SqlQuery;
 using LinqToDB.Tools;
 using Nop.Core;
 using Nop.Core.Domain;
@@ -137,7 +138,15 @@ namespace Nop.Data
         public TEntity InsertEntity<TEntity>(TEntity entity) where TEntity : BaseEntity
         {
             using var dataContext = CreateDataConnection();
-            entity.Id = dataContext.InsertWithInt32Identity(entity);
+            try
+            {
+                entity.Id = dataContext.InsertWithInt32Identity(entity);
+            }
+            catch (SqlException ex) when (ex.Message.StartsWith("Identity field must be defined for"))
+            {
+                dataContext.Insert(entity);
+            }
+            
             return entity;
         }
 
@@ -231,7 +240,7 @@ namespace Nop.Data
         /// <param name="procedureName">Procedure name</param>
         /// <param name="parameters">Command parameters</param>
         /// <returns>Resulting value</returns>
-        public T ExecuteStoredProcedure<T>(string procedureName, params DataParameter[] parameters)
+        public virtual T ExecuteStoredProcedure<T>(string procedureName, params DataParameter[] parameters)
         {
             using var dataContext = CreateDataConnection();
             var command = new CommandInfo(dataContext, procedureName, parameters);
@@ -249,7 +258,7 @@ namespace Nop.Data
         /// <param name="procedureName">Procedure name</param>
         /// <param name="parameters">Command parameters</param>
         /// <returns>Number of records, affected by command execution.</returns>
-        public int ExecuteStoredProcedure(string procedureName, params DataParameter[] parameters)
+        public virtual int ExecuteStoredProcedure(string procedureName, params DataParameter[] parameters)
         {
             using var dataContext = CreateDataConnection();
             var command = new CommandInfo(dataContext, procedureName, parameters);
@@ -268,7 +277,7 @@ namespace Nop.Data
         /// <param name="procedureName">Procedure name</param>
         /// <param name="parameters">Command parameters</param>
         /// <returns>Returns collection of query result records</returns>
-        public IList<T> QueryProc<T>(string procedureName, params DataParameter[] parameters)
+        public virtual IList<T> QueryProc<T>(string procedureName, params DataParameter[] parameters)
         {
             using var dataContext = CreateDataConnection();
             var command = new CommandInfo(dataContext, procedureName, parameters);

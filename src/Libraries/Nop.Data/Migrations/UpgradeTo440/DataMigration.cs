@@ -23,7 +23,7 @@ namespace Nop.Data.Migrations.UpgradeTo440
         public override void Up()
         {
             // new permission
-            if (!_dataProvider.GetTable<PermissionRecord>().Any(pr => string.Compare(pr.SystemName, "AccessProfiling", true) == 0))
+            if (!_dataProvider.GetTable<PermissionRecord>().Any(pr => pr.SystemName.ToLower().Contains("AccessProfiling")))
             {
                 var profilingPermission = _dataProvider.InsertEntity(
                     new PermissionRecord
@@ -50,7 +50,7 @@ namespace Nop.Data.Migrations.UpgradeTo440
 
             var activityLogTypeTable = _dataProvider.GetTable<ActivityLogType>();
 
-            if (!activityLogTypeTable.Any(alt => string.Compare(alt.SystemKeyword, "AddNewSpecAttributeGroup", true) == 0))
+            if (!activityLogTypeTable.Any(alt => alt.SystemKeyword.ToLower().Contains("AddNewSpecAttributeGroup")))
                 _dataProvider.InsertEntity(
                     new ActivityLogType
                     {
@@ -60,7 +60,7 @@ namespace Nop.Data.Migrations.UpgradeTo440
                     }
                 );
 
-            if (!activityLogTypeTable.Any(alt => string.Compare(alt.SystemKeyword, "EditSpecAttributeGroup", true) == 0))
+            if (!activityLogTypeTable.Any(alt => alt.SystemKeyword.ToLower().Contains("EditSpecAttributeGroup")))
                 _dataProvider.InsertEntity(
                     new ActivityLogType
                     {
@@ -70,7 +70,7 @@ namespace Nop.Data.Migrations.UpgradeTo440
                     }
                 );
 
-            if (!activityLogTypeTable.Any(alt => string.Compare(alt.SystemKeyword, "DeleteSpecAttributeGroup", true) == 0))
+            if (!activityLogTypeTable.Any(alt => alt.SystemKeyword.ToLower().Contains("DeleteSpecAttributeGroup")))
                 _dataProvider.InsertEntity(
                     new ActivityLogType
                     {
@@ -80,7 +80,7 @@ namespace Nop.Data.Migrations.UpgradeTo440
                     }
                 );
             //<MFA #475>
-            if (!_dataProvider.GetTable<PermissionRecord>().Any(pr => string.Compare(pr.SystemName, "ManageMultifactorAuthenticationMethods", true) == 0))
+            if (!_dataProvider.GetTable<PermissionRecord>().Any(pr => pr.SystemName.ToLower().Contains("ManageMultifactorAuthenticationMethods")))
             {
                 var multiFactorAuthenticationPermission = _dataProvider.InsertEntity(
                     new PermissionRecord

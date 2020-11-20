@@ -9,6 +9,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Nop.Core.Infrastructure;
 using Nop.Data.Migrations;
+using Nop.Data.Migrations.FluentMigrator.Runner.MongoDB;
 
 namespace Nop.Data
 {
@@ -39,7 +40,7 @@ namespace Nop.Data
                 .AddSingleton<IMigrationManager, MigrationManager>()
                 .AddSingleton<IConventionSet, NopConventionSet>()
                 .ConfigureRunner(rb =>
-                    rb.WithVersionTable(new MigrationVersionInfo()).AddSqlServer().AddMySql5()
+                    rb.WithVersionTable(new MigrationVersionInfo()).AddSqlServer().AddMySql5().AddMongoDb()
                         // define the assembly containing the migrations
                         .ScanIn(mAssemblies).For.Migrations());
         }

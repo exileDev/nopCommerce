@@ -83,7 +83,7 @@
 
                     $(document).ready(function () {
                         $('#@Html.IdFor(m => m.DataProvider)').on('change', function() {
-                            var integratedSecurityProviders = ['@((int)DataProviderType.SqlServer)']
+                            var integratedSecurityProviders = ['@((int)DataProviderType.SqlServer)', '@((int)DataProviderType.MongoDb)']
                             if(!integratedSecurityProviders.includes($(this).val())) {
                                 $('#@Html.IdFor(x => x.IntegratedSecurity)').prop('checked', false);
                                 $('#@Html.IdFor(x => x.IntegratedSecurity)').prop('disabled', true)

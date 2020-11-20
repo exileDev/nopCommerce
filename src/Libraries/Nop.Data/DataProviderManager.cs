@@ -23,6 +23,8 @@ namespace Nop.Data
                     return new MsSqlNopDataProvider();
                 case DataProviderType.MySql:
                     return new MySqlNopDataProvider();
+                case DataProviderType.MongoDb:
+                    return new MongoDbDataProvider();
                 default:
                     throw new NopException($"Not supported data provider name: '{dataProviderType}'");
             }

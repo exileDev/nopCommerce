@@ -858,9 +858,9 @@ namespace Nop.Services.Catalog
             if (loadFilterableSpecificationAttributeOptionIds)
             {
                 filterableSpecificationAttributeOptionIds =
-                    (from psam in _productSpecificationAttributeRepository.Table
+                    await (from psam in _productSpecificationAttributeRepository.Table
                      where psam.AllowFiltering && productsQuery.Any(p => p.Id == psam.ProductId)
-                     select psam.SpecificationAttributeOptionId).Distinct().ToList();
+                     select psam.SpecificationAttributeOptionId).Distinct().ToListAsync();
             }
 
             var products = await productsQuery.OrderBy(orderBy).ToPagedListAsync(pageIndex, pageSize);

@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="BenchmarkDotNet" Version="0.12.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Presentation\Nop.Web\Nop.Web.csproj" />
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="3.1.8" />
+    <PackageReference Include="Moq" Version="4.14.6" />
+    <Compile Include="..\Nop.Tests\BaseNopTest.cs" />
+    <Compile Include="..\Nop.Tests\NopTestsDefaults.cs" />
+    <Compile Include="..\Nop.Tests\SqLiteNopDataProvider.cs" />
+    <Compile Include="..\Nop.Tests\TestDataProviderManager.cs" />
+    <Compile Include="..\Nop.Tests\TestProcessorAccessor.cs" />
+  </ItemGroup>
+
+</Project>

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using FluentMigrator;
 using FluentMigrator.Runner;
 using FluentMigrator.Runner.Conventions;
@@ -282,7 +283,7 @@ namespace Nop.Tests
             //register all settings
             var settings = typeFinder.FindClassesOfType(typeof(ISettings), false).ToList();
             foreach (var setting in settings)
-                services.AddTransient(setting, context => context.GetRequiredService<ISettingService>().LoadSetting(setting));
+                services.AddTransient(setting, context => context.GetRequiredService<ISettingService>().LoadSettingAsync(setting).Result);
 
             //event consumers
             var consumers = typeFinder.FindClassesOfType(typeof(IConsumer<>)).ToList();
@@ -319,8 +320,8 @@ namespace Nop.Tests
             _serviceProvider.GetService<INopDataProvider>().CreateDatabase(null);
             _serviceProvider.GetService<INopDataProvider>().InitializeDatabase();
 
-            _serviceProvider.GetService<IInstallationService>().InstallRequiredData(NopTestsDefaults.AdminEmail, NopTestsDefaults.AdminPassword);
-            _serviceProvider.GetService<IInstallationService>().InstallSampleData(NopTestsDefaults.AdminEmail);
+            _serviceProvider.GetService<IInstallationService>().InstallRequiredDataAsync(NopTestsDefaults.AdminEmail, NopTestsDefaults.AdminPassword).GetAwaiter().GetResult();
+            _serviceProvider.GetService<IInstallationService>().InstallSampleDataAsync(NopTestsDefaults.AdminEmail).GetAwaiter().GetResult();
         }
 
         public T GetService<T>()
@@ -358,17 +359,17 @@ namespace Nop.Tests
 
         public class TestAuthenticationService : IAuthenticationService
         {
-            public void SignIn(Customer customer, bool isPersistent)
+            public async System.Threading.Tasks.Task SignInAsync(Customer customer, bool isPersistent)
             {
             }
 
-            public void SignOut()
+            public async System.Threading.Tasks.Task SignOutAsync()
             {
             }
 
-            public Customer GetAuthenticatedCustomer()
+            public async Task<Customer> GetAuthenticatedCustomerAsync()
             {
-                return _serviceProvider.GetService<ICustomerService>().GetCustomerByEmail(NopTestsDefaults.AdminEmail);
+                return await _serviceProvider.GetService<ICustomerService>().GetCustomerByEmailAsync(NopTestsDefaults.AdminEmail);
             }
         }
 

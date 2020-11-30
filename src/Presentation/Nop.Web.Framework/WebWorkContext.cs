@@ -191,9 +191,9 @@ namespace Nop.Web.Framework
         {
             get
             {
-                //whether there is a cached value
-                if (_cachedCustomer != null)
-                    return _cachedCustomer;
+                // //whether there is a cached value
+                // if (_cachedCustomer != null)
+                //     return _cachedCustomer;
 
                 Customer customer = null;
 

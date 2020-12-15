@@ -16,7 +16,7 @@ jobs:
         with:
           dotnet-version: '3.1.100'
       - name: Build with dotnet
-        run: dotnet build Examples/Examples.sln
+        run: dotnet build /src/Presentation/Nop.Web/Nop.Web.csproj
       - name: InferSharp
         uses: microsoft/infersharpaction@v0.2
         id: runinfersharp

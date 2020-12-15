@@ -1,0 +1,5 @@
+- name: Run Infer#
+  uses: microsoft/infersharpaction@v0.2
+  with:
+    # The path where the binaries (.dll and .pdb) are located.
+    binary-path: '/src/Presentation/Nop.Web/bin/Debug/netcoreapp3.1'

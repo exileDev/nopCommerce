@@ -10,9 +10,17 @@ jobs:
   build:
 
     runs-on: ubuntu-latest
-
     steps:
-    - name: InferSharp
-      uses: microsoft/infersharpaction@v0.2
-      with:
-        binary-path: './src/Presentation/Nop.Web/bin/Debug/netcoreapp3.1'
+      - uses: actions/checkout@v2.3.4
+      - uses: microsoft/setup-dotnet@v1
+        with:
+          dotnet-version: '3.1.100'
+      - name: Build with dotnet
+        run: dotnet build Examples/Examples.sln
+      - name: InferSharp
+        uses: microsoft/infersharpaction@v0.2
+        id: runinfersharp
+        with:
+          binary-path: './src/Presentation/Nop.Web/bin/Debug/netcoreapp3.1'
+      - name: Infer# analysis results
+        run: echo "${{ steps.runinfersharp.outputs.results }}"

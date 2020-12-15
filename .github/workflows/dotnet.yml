@@ -1,0 +1,18 @@
+name: .NET
+
+on:
+  push:
+    branches: [ develop ]
+  pull_request:
+    branches: [ develop ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: InferSharp
+      uses: microsoft/infersharpaction@v0.2
+      with:
+        binary-path: '/src/Presentation/Nop.Web/bin/Debug/netcoreapp3.1'

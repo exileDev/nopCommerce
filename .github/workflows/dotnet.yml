@@ -22,5 +22,6 @@ jobs:
         id: runinfersharp
         with:
           binary-path: './src/Presentation/Nop.Web/bin/Debug/netcoreapp3.1'
+          report-on-files: 'src/Libraries/Nop.Services/Catalog/ProductService.cs'
       - name: Infer# analysis results
         run: echo "${{ steps.runinfersharp.outputs.results }}"

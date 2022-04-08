@@ -7,6 +7,7 @@ using System.Xml;
 using System.Xml.Linq;
 using System.Xml.Serialization;
 using System.Xml.XPath;
+using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
@@ -27,6 +28,7 @@ using Nop.Services.Customers;
 using Nop.Services.Directory;
 using Nop.Services.Localization;
 using Nop.Services.Media;
+using Nop.Services.Products.Queries;
 using Nop.Services.Seo;
 using Nop.Services.Topics;
 using Nop.Services.Vendors;
@@ -72,6 +74,8 @@ namespace Nop.Web.Factories
         private readonly MediaSettings _mediaSettings;
         private readonly VendorSettings _vendorSettings;
 
+        private readonly IMediator _mediator;
+
         #endregion
 
         #region Ctor
@@ -105,7 +109,8 @@ namespace Nop.Web.Factories
             IWebHelper webHelper,
             IWorkContext workContext,
             MediaSettings mediaSettings,
-            VendorSettings vendorSettings)
+            VendorSettings vendorSettings,
+            IMediator mediator)
         {
             _blogSettings = blogSettings;
             _catalogSettings = catalogSettings;
@@ -137,6 +142,8 @@ namespace Nop.Web.Factories
             _workContext = workContext;
             _mediaSettings = mediaSettings;
             _vendorSettings = vendorSettings;
+
+            _mediator = mediator;
         }
 
         #endregion
@@ -767,19 +774,23 @@ namespace Nop.Web.Factories
 
             var filteredSpecs = command.SpecificationOptionIds is null ? null : filterableOptions.Where(fo => command.SpecificationOptionIds.Contains(fo.Id)).ToList();
 
+
             //products
-            var products = await _productService.SearchProductsAsync(
-                command.PageNumber - 1,
-                command.PageSize,
-                categoryIds: categoryIds,
-                storeId: currentStore.Id,
-                visibleIndividuallyOnly: true,
-                excludeFeaturedProducts: !_catalogSettings.IgnoreFeaturedProducts && !_catalogSettings.IncludeFeaturedProductsInNormalLists,
-                priceMin: selectedPriceRange?.From,
-                priceMax: selectedPriceRange?.To,
-                manufacturerIds: command.ManufacturerIds,
-                filteredSpecOptions: filteredSpecs,
-                orderBy: (ProductSortingEnum)command.OrderBy);
+            var products = await _mediator.Send(new SearchProductsQuery
+            {
+                PageIndex = command.PageNumber - 1,
+                PageSize = command.PageSize,
+                CategoryIds = categoryIds,
+                StoreId = currentStore.Id,
+                VisibleIndividuallyOnly = true,
+                ExcludeFeaturedProducts = !_catalogSettings.IgnoreFeaturedProducts && !_catalogSettings.IncludeFeaturedProductsInNormalLists,
+                PriceMin = selectedPriceRange?.From,
+                PriceMax = selectedPriceRange?.To,
+                ManufacturerIds = command.ManufacturerIds,
+                FilteredSpecOptions = filteredSpecs,
+                OrderBy = (ProductSortingEnum)command.OrderBy
+            });
+
 
             var isFiltering = filterableOptions.Any() || selectedPriceRange?.From is not null;
             await PrepareCatalogProductsAsync(model, products, isFiltering);

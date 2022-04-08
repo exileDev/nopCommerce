@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using MediatR;
 using Nop.Core;
 using Nop.Core.Caching;
 using Nop.Core.Configuration;
@@ -290,6 +291,9 @@ namespace Nop.Web.Framework.Infrastructure
 
             //XML sitemap
             services.AddScoped<IXmlSiteMap, XmlSiteMap>();
+
+            
+            services.AddMediatR(typeFinder.GetAssemblies().ToArray());
         }
 
         // <summary>

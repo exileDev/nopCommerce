@@ -203,7 +203,7 @@ namespace Nop.Web.Areas.Admin.Controllers
                 return AccessDeniedView();
 
             //try to get a blog post with the specified id
-            var blogPost = await _blogService.GetBlogPostByIdAsync(model.Id);
+            var blogPost = await _mediator.Send(new GetEntityByIdQuery<BlogPost> { Id = model.Id });
             if (blogPost == null)
                 return RedirectToAction("BlogPosts");
 
@@ -245,7 +245,7 @@ namespace Nop.Web.Areas.Admin.Controllers
                 return AccessDeniedView();
 
             //try to get a blog post with the specified id
-            var blogPost = await _blogService.GetBlogPostByIdAsync(id);
+            var blogPost = await _mediator.Send(new GetEntityByIdQuery<BlogPost> { Id = id });
             if (blogPost == null)
                 return RedirectToAction("BlogPosts");
 
@@ -270,7 +270,7 @@ namespace Nop.Web.Areas.Admin.Controllers
                 return AccessDeniedView();
 
             //try to get a blog post with the specified id
-            var blogPost = await _blogService.GetBlogPostByIdAsync(filterByBlogPostId ?? 0);
+            var blogPost = await _mediator.Send(new GetEntityByIdQuery<BlogPost> { Id = filterByBlogPostId ?? 0 });
             if (blogPost == null && filterByBlogPostId.HasValue)
                 return RedirectToAction("BlogComments");
 
@@ -299,7 +299,7 @@ namespace Nop.Web.Areas.Admin.Controllers
                 return AccessDeniedView();
 
             //try to get a blog comment with the specified id
-            var comment = await _blogService.GetBlogCommentByIdAsync(model.Id)
+            var comment = await _mediator.Send(new GetEntityByIdQuery<BlogComment> { Id = model.Id })
                 ?? throw new ArgumentException("No comment found with the specified id");
 
             var previousIsApproved = comment.IsApproved;
@@ -326,7 +326,7 @@ namespace Nop.Web.Areas.Admin.Controllers
                 return AccessDeniedView();
 
             //try to get a blog comment with the specified id
-            var comment = await _blogService.GetBlogCommentByIdAsync(id)
+            var comment = await _mediator.Send(new GetEntityByIdQuery<BlogComment> { Id = id })
                 ?? throw new ArgumentException("No comment found with the specified id", nameof(id));
 
             await _blogService.DeleteBlogCommentAsync(comment);

@@ -56,6 +56,7 @@ using Nop.Web.Framework.Menu;
 using Nop.Web.Framework.Mvc.Routing;
 using Nop.Web.Framework.Themes;
 using Nop.Web.Framework.UI;
+using Nop.Services.Common.Queries;
 
 namespace Nop.Web.Framework.Infrastructure
 {
@@ -292,7 +293,8 @@ namespace Nop.Web.Framework.Infrastructure
             //XML sitemap
             services.AddScoped<IXmlSiteMap, XmlSiteMap>();
 
-            
+            services.AddScoped(typeof(IRequestHandler<,>), typeof(GetEntityByIdHandler<>));
+
             services.AddMediatR(typeFinder.GetAssemblies().ToArray());
         }
 

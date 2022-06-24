@@ -2,10 +2,12 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Nop.Core.Domain.Blogs;
 using Nop.Core.Events;
 using Nop.Services.Blogs;
+using Nop.Services.Common.Queries;
 using Nop.Services.Localization;
 using Nop.Services.Logging;
 using Nop.Services.Messages;
@@ -29,6 +31,8 @@ namespace Nop.Web.Areas.Admin.Controllers
         private readonly ICustomerActivityService _customerActivityService;
         private readonly IEventPublisher _eventPublisher;
         private readonly ILocalizationService _localizationService;
+        private readonly IMediator _mediator;
+
         private readonly INotificationService _notificationService;
         private readonly IPermissionService _permissionService;
         private readonly IStoreMappingService _storeMappingService;
@@ -44,6 +48,7 @@ namespace Nop.Web.Areas.Admin.Controllers
             ICustomerActivityService customerActivityService,
             IEventPublisher eventPublisher,
             ILocalizationService localizationService,
+            IMediator mediator,
             INotificationService notificationService,
             IPermissionService permissionService,
             IStoreMappingService storeMappingService,
@@ -55,6 +60,7 @@ namespace Nop.Web.Areas.Admin.Controllers
             _customerActivityService = customerActivityService;
             _eventPublisher = eventPublisher;
             _localizationService = localizationService;
+            _mediator = mediator;
             _notificationService = notificationService;
             _permissionService = permissionService;
             _storeMappingService = storeMappingService;
@@ -180,7 +186,7 @@ namespace Nop.Web.Areas.Admin.Controllers
                 return AccessDeniedView();
 
             //try to get a blog post with the specified id
-            var blogPost = await _blogService.GetBlogPostByIdAsync(id);
+            var blogPost = await _mediator.Send(new GetEntityByIdQuery<BlogPost> { Id = id });
             if (blogPost == null)
                 return RedirectToAction("BlogPosts");
 

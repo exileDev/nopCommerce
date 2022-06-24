@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -27,6 +28,7 @@ using Nop.Services.Localization;
 using Nop.Services.Media;
 using Nop.Services.Orders;
 using Nop.Services.Payments;
+using Nop.Services.Products.Queries;
 using Nop.Services.Security;
 using Nop.Services.Seo;
 using Nop.Services.Shipping;
@@ -68,6 +70,7 @@ namespace Nop.Web.Areas.Admin.Factories
         private readonly IGiftCardService _giftCardService;
         private readonly ILocalizationService _localizationService;
         private readonly IMeasureService _measureService;
+        private readonly IMediator _mediator;
         private readonly IOrderProcessingService _orderProcessingService;
         private readonly IOrderReportService _orderReportService;
         private readonly IOrderService _orderService;
@@ -116,6 +119,7 @@ namespace Nop.Web.Areas.Admin.Factories
             IGiftCardService giftCardService,
             ILocalizationService localizationService,
             IMeasureService measureService,
+            IMediator mediator,
             IOrderProcessingService orderProcessingService,
             IOrderReportService orderReportService,
             IOrderService orderService,
@@ -160,6 +164,7 @@ namespace Nop.Web.Areas.Admin.Factories
             _giftCardService = giftCardService;
             _localizationService = localizationService;
             _measureService = measureService;
+            _mediator = mediator;
             _orderProcessingService = orderProcessingService;
             _orderReportService = orderReportService;
             _orderService = orderService;
@@ -1300,12 +1305,16 @@ namespace Nop.Web.Areas.Admin.Factories
                 throw new ArgumentNullException(nameof(searchModel));
 
             //get products
-            var products = await _productService.SearchProductsAsync(showHidden: true,
-                categoryIds: new List<int> { searchModel.SearchCategoryId },
-                manufacturerIds: new List<int> { searchModel.SearchManufacturerId },
-                productType: searchModel.SearchProductTypeId > 0 ? (ProductType?)searchModel.SearchProductTypeId : null,
-                keywords: searchModel.SearchProductName,
-                pageIndex: searchModel.Page - 1, pageSize: searchModel.PageSize);
+            var products = await _mediator.Send(new SearchProductsQuery
+            {
+                PageIndex = searchModel.Page - 1,
+                PageSize = searchModel.PageSize,
+                ShowHidden = true,
+                CategoryIds = new List<int> { searchModel.SearchCategoryId },
+                ManufacturerIds = new List<int> { searchModel.SearchManufacturerId },
+                ProductType = searchModel.SearchProductTypeId > 0 ? (ProductType?)searchModel.SearchProductTypeId : null,
+                Keywords = searchModel.SearchProductName
+        });
 
             //prepare grid model
             var model = await new AddProductToOrderListModel().PrepareToGridAsync(searchModel, products, () =>

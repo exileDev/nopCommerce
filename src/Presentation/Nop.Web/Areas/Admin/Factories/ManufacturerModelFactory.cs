@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using MediatR;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Nop.Core.Domain.Catalog;
 using Nop.Core.Domain.Directory;
@@ -10,6 +11,7 @@ using Nop.Services.Catalog;
 using Nop.Services.Directory;
 using Nop.Services.Discounts;
 using Nop.Services.Localization;
+using Nop.Services.Products.Queries;
 using Nop.Services.Seo;
 using Nop.Web.Areas.Admin.Infrastructure.Mapper.Extensions;
 using Nop.Web.Areas.Admin.Models.Catalog;
@@ -32,6 +34,7 @@ namespace Nop.Web.Areas.Admin.Factories
         private readonly IAclSupportedModelFactory _aclSupportedModelFactory;
         private readonly IBaseAdminModelFactory _baseAdminModelFactory;
         private readonly IManufacturerService _manufacturerService;
+        private readonly IMediator _mediator;
         private readonly IDiscountService _discountService;
         private readonly IDiscountSupportedModelFactory _discountSupportedModelFactory;
         private readonly ILocalizationService _localizationService;
@@ -50,6 +53,7 @@ namespace Nop.Web.Areas.Admin.Factories
             IAclSupportedModelFactory aclSupportedModelFactory,
             IBaseAdminModelFactory baseAdminModelFactory,
             IManufacturerService manufacturerService,
+            IMediator mediator,
             IDiscountService discountService,
             IDiscountSupportedModelFactory discountSupportedModelFactory,
             ILocalizationService localizationService,
@@ -64,6 +68,7 @@ namespace Nop.Web.Areas.Admin.Factories
             _aclSupportedModelFactory = aclSupportedModelFactory;
             _baseAdminModelFactory = baseAdminModelFactory;
             _manufacturerService = manufacturerService;
+            _mediator = mediator;
             _discountService = discountService;
             _discountSupportedModelFactory = discountSupportedModelFactory;
             _localizationService = localizationService;
@@ -345,14 +350,18 @@ namespace Nop.Web.Areas.Admin.Factories
                 throw new ArgumentNullException(nameof(searchModel));
 
             //get products
-            var products = await _productService.SearchProductsAsync(showHidden: true,
-                categoryIds: new List<int> { searchModel.SearchCategoryId },
-                manufacturerIds: new List<int> { searchModel.SearchManufacturerId },
-                storeId: searchModel.SearchStoreId,
-                vendorId: searchModel.SearchVendorId,
-                productType: searchModel.SearchProductTypeId > 0 ? (ProductType?)searchModel.SearchProductTypeId : null,
-                keywords: searchModel.SearchProductName,
-                pageIndex: searchModel.Page - 1, pageSize: searchModel.PageSize);
+            var products = await _mediator.Send(new SearchProductsQuery
+            {
+                PageIndex = searchModel.Page - 1,
+                PageSize = searchModel.PageSize,
+                ShowHidden = true,
+                CategoryIds = new List<int> { searchModel.SearchCategoryId },
+                ManufacturerIds = new List<int> { searchModel.SearchManufacturerId },
+                StoreId = searchModel.SearchStoreId,
+                VendorId = searchModel.SearchVendorId,
+                ProductType = searchModel.SearchProductTypeId > 0 ? (ProductType?)searchModel.SearchProductTypeId : null,
+                Keywords = searchModel.SearchProductName
+            });
 
             //prepare grid model
             var model = await new AddProductToManufacturerListModel().PrepareToGridAsync(searchModel, products, () =>

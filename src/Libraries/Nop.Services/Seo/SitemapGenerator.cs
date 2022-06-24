@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.AspNetCore.Mvc.Routing;
@@ -22,6 +23,7 @@ using Nop.Services.Blogs;
 using Nop.Services.Catalog;
 using Nop.Services.Localization;
 using Nop.Services.News;
+using Nop.Services.Products.Queries;
 using Nop.Services.Topics;
 
 namespace Nop.Services.Seo
@@ -41,6 +43,7 @@ namespace Nop.Services.Seo
         private readonly IEventPublisher _eventPublisher;
         private readonly ILanguageService _languageService;
         private readonly IManufacturerService _manufacturerService;
+        private readonly IMediator _mediator;
         private readonly INewsService _newsService;
         private readonly IProductService _productService;
         private readonly IProductTagService _productTagService;
@@ -65,6 +68,7 @@ namespace Nop.Services.Seo
             IEventPublisher eventPublisher,
             ILanguageService languageService,
             IManufacturerService manufacturerService,
+            IMediator mediator,
             INewsService newsService,
             IProductService productService,
             IProductTagService productTagService,
@@ -85,6 +89,7 @@ namespace Nop.Services.Seo
             _eventPublisher = eventPublisher;
             _languageService = languageService;
             _manufacturerService = manufacturerService;
+            _mediator = mediator;
             _newsService = newsService;
             _productService = productService;
             _productTagService = productTagService;
@@ -254,8 +259,14 @@ namespace Nop.Services.Seo
         {
             var store = await _storeContext.GetCurrentStoreAsync();
 
-            return await (await _productService.SearchProductsAsync(0, storeId: store.Id,
-                visibleIndividuallyOnly: true, orderBy: ProductSortingEnum.CreatedOn))
+            var products = await _mediator.Send(new SearchProductsQuery {
+                PageIndex = 0,
+                StoreId = store.Id,
+                VisibleIndividuallyOnly = true,
+                OrderBy = ProductSortingEnum.CreatedOn
+            });
+
+            return await products
                 .SelectAwait(async product => await GetLocalizedSitemapUrlAsync("Product", GetSeoRouteParamsAwait(product), product.UpdatedOnUtc)).ToListAsync();
         }
 

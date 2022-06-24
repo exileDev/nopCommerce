@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Primitives;
@@ -26,6 +27,7 @@ using Nop.Services.Logging;
 using Nop.Services.Media;
 using Nop.Services.Messages;
 using Nop.Services.Orders;
+using Nop.Services.Products.Queries;
 using Nop.Services.Security;
 using Nop.Services.Seo;
 using Nop.Services.Shipping;
@@ -56,6 +58,7 @@ namespace Nop.Web.Areas.Admin.Controllers
         private readonly ILocalizationService _localizationService;
         private readonly ILocalizedEntityService _localizedEntityService;
         private readonly IManufacturerService _manufacturerService;
+        private readonly IMediator _mediator;
         private readonly INopFileProvider _fileProvider;
         private readonly INotificationService _notificationService;
         private readonly IPdfService _pdfService;
@@ -95,6 +98,7 @@ namespace Nop.Web.Areas.Admin.Controllers
             ILocalizationService localizationService,
             ILocalizedEntityService localizedEntityService,
             IManufacturerService manufacturerService,
+            IMediator mediator,
             INopFileProvider fileProvider,
             INotificationService notificationService,
             IPdfService pdfService,
@@ -130,6 +134,7 @@ namespace Nop.Web.Areas.Admin.Controllers
             _localizationService = localizationService;
             _localizedEntityService = localizedEntityService;
             _manufacturerService = manufacturerService;
+            _mediator = mediator;
             _fileProvider = fileProvider;
             _notificationService = notificationService;
             _pdfService = pdfService;
@@ -1674,13 +1679,13 @@ namespace Nop.Web.Areas.Admin.Controllers
             }
             catch (Exception exc)
             {
-                return Json(new 
-                    { 
-                        success = false, 
-                        message = $"{await _localizationService.GetResourceAsync("Admin.Catalog.Products.Pictures.Alert.PictureAdd")} {exc.Message}", 
-                    });
+                return Json(new
+                {
+                    success = false,
+                    message = $"{await _localizationService.GetResourceAsync("Admin.Catalog.Products.Pictures.Alert.PictureAdd")} {exc.Message}",
+                });
             }
-            
+
             return Json(new { success = true });
         }
 
@@ -2175,16 +2180,19 @@ namespace Nop.Web.Areas.Admin.Controllers
             else if (model.SearchPublishedId == 2)
                 overridePublished = false;
 
-            var products = await _productService.SearchProductsAsync(0,
-                categoryIds: categoryIds,
-                manufacturerIds: new List<int> { model.SearchManufacturerId },
-                storeId: model.SearchStoreId,
-                vendorId: model.SearchVendorId,
-                warehouseId: model.SearchWarehouseId,
-                productType: model.SearchProductTypeId > 0 ? (ProductType?)model.SearchProductTypeId : null,
-                keywords: model.SearchProductName,
-                showHidden: true,
-                overridePublished: overridePublished);
+            var products = await _mediator.Send(new SearchProductsQuery
+            {
+                PageIndex = 0,
+                CategoryIds = categoryIds,
+                ManufacturerIds = new List<int> { model.SearchManufacturerId },
+                StoreId = model.SearchStoreId,
+                VendorId = model.SearchVendorId,
+                WarehouseId = model.SearchWarehouseId,
+                ProductType = model.SearchProductTypeId > 0 ? (ProductType?)model.SearchProductTypeId : null,
+                Keywords = model.SearchProductName,
+                ShowHidden = true,
+                OverridePublished = overridePublished
+            });
 
             try
             {
@@ -2232,16 +2240,19 @@ namespace Nop.Web.Areas.Admin.Controllers
             else if (model.SearchPublishedId == 2)
                 overridePublished = false;
 
-            var products = await _productService.SearchProductsAsync(0,
-                categoryIds: categoryIds,
-                manufacturerIds: new List<int> { model.SearchManufacturerId },
-                storeId: model.SearchStoreId,
-                vendorId: model.SearchVendorId,
-                warehouseId: model.SearchWarehouseId,
-                productType: model.SearchProductTypeId > 0 ? (ProductType?)model.SearchProductTypeId : null,
-                keywords: model.SearchProductName,
-                showHidden: true,
-                overridePublished: overridePublished);
+            var products = await _mediator.Send(new SearchProductsQuery
+            {
+                PageIndex = 0,
+                CategoryIds = categoryIds,
+                ManufacturerIds = new List<int> { model.SearchManufacturerId },
+                StoreId = model.SearchStoreId,
+                VendorId = model.SearchVendorId,
+                WarehouseId = model.SearchWarehouseId,
+                ProductType = model.SearchProductTypeId > 0 ? (ProductType?)model.SearchProductTypeId : null,
+                Keywords = model.SearchProductName,
+                ShowHidden = true,
+                OverridePublished = overridePublished
+            });
 
             try
             {
@@ -2318,16 +2329,19 @@ namespace Nop.Web.Areas.Admin.Controllers
             else if (model.SearchPublishedId == 2)
                 overridePublished = false;
 
-            var products = await _productService.SearchProductsAsync(0,
-                categoryIds: categoryIds,
-                manufacturerIds: new List<int> { model.SearchManufacturerId },
-                storeId: model.SearchStoreId,
-                vendorId: model.SearchVendorId,
-                warehouseId: model.SearchWarehouseId,
-                productType: model.SearchProductTypeId > 0 ? (ProductType?)model.SearchProductTypeId : null,
-                keywords: model.SearchProductName,
-                showHidden: true,
-                overridePublished: overridePublished);
+            var products = await _mediator.Send(new SearchProductsQuery
+            {
+                PageIndex = 0,
+                CategoryIds = categoryIds,
+                ManufacturerIds = new List<int> { model.SearchManufacturerId },
+                StoreId = model.SearchStoreId,
+                VendorId = model.SearchVendorId,
+                WarehouseId = model.SearchWarehouseId,
+                ProductType = model.SearchProductTypeId > 0 ? (ProductType?)model.SearchProductTypeId : null,
+                Keywords = model.SearchProductName,
+                ShowHidden = true,
+                OverridePublished = overridePublished
+            });
 
             try
             {
@@ -2397,18 +2411,18 @@ namespace Nop.Web.Areas.Admin.Controllers
                 else
                 {
                     _notificationService.ErrorNotification(await _localizationService.GetResourceAsync("Admin.Common.UploadFile"));
-                    
+
                     return RedirectToAction("List");
                 }
 
                 _notificationService.SuccessNotification(await _localizationService.GetResourceAsync("Admin.Catalog.Products.Imported"));
-                
+
                 return RedirectToAction("List");
             }
             catch (Exception exc)
             {
                 await _notificationService.ErrorNotificationAsync(exc);
-                
+
                 return RedirectToAction("List");
             }
         }
@@ -2818,7 +2832,7 @@ namespace Nop.Web.Areas.Admin.Controllers
                 {
                     var mappings = await _productAttributeParser
                         .ParseProductAttributeMappingsAsync(combination.AttributesXml);
-                    
+
                     if (mappings?.Any(m => m.Id == productAttributeMapping.Id) == true)
                     {
                         _notificationService.ErrorNotification(
@@ -3080,7 +3094,7 @@ namespace Nop.Web.Areas.Admin.Controllers
                 foreach (var combination in existedCombinations)
                 {
                     var attributeValues = await _productAttributeParser.ParseProductAttributeValuesAsync(combination.AttributesXml);
-                    
+
                     if (attributeValues.Where(attribute => attribute.Id == id).Any())
                     {
                         return Conflict(string.Format(await _localizationService.GetResourceAsync("Admin.Catalog.Products.ProductAttributes.Attributes.Values.AlreadyExistsInCombination"),

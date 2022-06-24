@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Nop.Core;
 using Nop.Core.Domain.Catalog;
@@ -13,6 +14,7 @@ using Nop.Services.Catalog;
 using Nop.Services.Common;
 using Nop.Services.Localization;
 using Nop.Services.Logging;
+using Nop.Services.Products.Queries;
 using Nop.Services.Security;
 using Nop.Services.Seo;
 using Nop.Services.Stores;
@@ -38,6 +40,7 @@ namespace Nop.Web.Controllers
         private readonly IGenericAttributeService _genericAttributeService;
         private readonly ILocalizationService _localizationService;
         private readonly IManufacturerService _manufacturerService;
+        private readonly IMediator _mediator;
         private readonly IPermissionService _permissionService;
         private readonly IProductModelFactory _productModelFactory;
         private readonly IProductService _productService;
@@ -63,6 +66,7 @@ namespace Nop.Web.Controllers
             IGenericAttributeService genericAttributeService,
             ILocalizationService localizationService,
             IManufacturerService manufacturerService,
+            IMediator mediator,
             IPermissionService permissionService,
             IProductModelFactory productModelFactory,
             IProductService productService,
@@ -84,6 +88,7 @@ namespace Nop.Web.Controllers
             _genericAttributeService = genericAttributeService;
             _localizationService = localizationService;
             _manufacturerService = manufacturerService;
+            _mediator = mediator;
             _permissionService = permissionService;
             _productModelFactory = productModelFactory;
             _productService = productService;
@@ -412,12 +417,17 @@ namespace Nop.Web.Controllers
             var productNumber = _catalogSettings.ProductSearchAutoCompleteNumberOfProducts > 0 ?
                 _catalogSettings.ProductSearchAutoCompleteNumberOfProducts : 10;
             var store = await _storeContext.GetCurrentStoreAsync();
-            var products = await _productService.SearchProductsAsync(0,
-                storeId: store.Id,
-                keywords: term,
-                languageId: (await _workContext.GetWorkingLanguageAsync()).Id,
-                visibleIndividuallyOnly: true,
-                pageSize: productNumber);
+
+
+            var products = await _mediator.Send(new SearchProductsQuery
+            {
+                PageIndex = 0,
+                PageSize = productNumber,
+                StoreId = store.Id,
+                Keywords = term,
+                LanguageId = (await _workContext.GetWorkingLanguageAsync()).Id,
+                VisibleIndividuallyOnly = true
+            });
 
             var showLinkToResultSearch = _catalogSettings.ShowLinkToAllResultInSearchAutoComplete && (products.TotalCount > productNumber);
 

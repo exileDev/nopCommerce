@@ -57,6 +57,7 @@ namespace Nop.Web.Factories
         private readonly ILocalizationService _localizationService;
         private readonly IManufacturerService _manufacturerService;
         private readonly IManufacturerTemplateService _manufacturerTemplateService;
+        private readonly IMediator _mediator;
         private readonly IPictureService _pictureService;
         private readonly IProductModelFactory _productModelFactory;
         private readonly IProductService _productService;
@@ -73,9 +74,6 @@ namespace Nop.Web.Factories
         private readonly IWorkContext _workContext;
         private readonly MediaSettings _mediaSettings;
         private readonly VendorSettings _vendorSettings;
-
-        private readonly IMediator _mediator;
-
         #endregion
 
         #region Ctor
@@ -94,6 +92,7 @@ namespace Nop.Web.Factories
             ILocalizationService localizationService,
             IManufacturerService manufacturerService,
             IManufacturerTemplateService manufacturerTemplateService,
+            IMediator mediator,
             IPictureService pictureService,
             IProductModelFactory productModelFactory,
             IProductService productService,
@@ -109,8 +108,7 @@ namespace Nop.Web.Factories
             IWebHelper webHelper,
             IWorkContext workContext,
             MediaSettings mediaSettings,
-            VendorSettings vendorSettings,
-            IMediator mediator)
+            VendorSettings vendorSettings)
         {
             _blogSettings = blogSettings;
             _catalogSettings = catalogSettings;
@@ -126,6 +124,7 @@ namespace Nop.Web.Factories
             _localizationService = localizationService;
             _manufacturerService = manufacturerService;
             _manufacturerTemplateService = manufacturerTemplateService;
+            _mediator = mediator;
             _pictureService = pictureService;
             _productModelFactory = productModelFactory;
             _productService = productService;
@@ -142,8 +141,6 @@ namespace Nop.Web.Factories
             _workContext = workContext;
             _mediaSettings = mediaSettings;
             _vendorSettings = vendorSettings;
-
-            _mediator = mediator;
         }
 
         #endregion
@@ -727,12 +724,16 @@ namespace Nop.Web.Factories
                 {
                     async Task<decimal?> getProductPriceAsync(ProductSortingEnum orderBy)
                     {
-                        var products = await _productService.SearchProductsAsync(0, 1,
-                            categoryIds: categoryIds,
-                            storeId: currentStore.Id,
-                            visibleIndividuallyOnly: true,
-                            excludeFeaturedProducts: !_catalogSettings.IgnoreFeaturedProducts && !_catalogSettings.IncludeFeaturedProductsInNormalLists,
-                            orderBy: orderBy);
+                        var products = await _mediator.Send(new SearchProductsQuery
+                        {
+                            PageIndex = 0,
+                            PageSize = 1,
+                            CategoryIds = categoryIds,
+                            StoreId = currentStore.Id,
+                            VisibleIndividuallyOnly = true,
+                            ExcludeFeaturedProducts = !_catalogSettings.IgnoreFeaturedProducts && !_catalogSettings.IncludeFeaturedProductsInNormalLists,
+                            OrderBy = orderBy
+                        });
 
                         return products?.FirstOrDefault()?.Price ?? 0;
                     }
@@ -1004,12 +1005,16 @@ namespace Nop.Web.Factories
                 {
                     async Task<decimal?> getProductPriceAsync(ProductSortingEnum orderBy)
                     {
-                        var products = await _productService.SearchProductsAsync(0, 1,
-                            manufacturerIds: manufacturerIds,
-                            storeId: currentStore.Id,
-                            visibleIndividuallyOnly: true,
-                            excludeFeaturedProducts: !_catalogSettings.IgnoreFeaturedProducts && !_catalogSettings.IncludeFeaturedProductsInNormalLists,
-                            orderBy: orderBy);
+                        var products = await _mediator.Send(new SearchProductsQuery
+                        {
+                            PageIndex = 0,
+                            PageSize = 1,
+                            ManufacturerIds = manufacturerIds,
+                            StoreId = currentStore.Id,
+                            VisibleIndividuallyOnly = true,
+                            ExcludeFeaturedProducts = !_catalogSettings.IgnoreFeaturedProducts && !_catalogSettings.IncludeFeaturedProductsInNormalLists,
+                            OrderBy = orderBy
+                        });
 
                         return products?.FirstOrDefault()?.Price ?? 0;
                     }
@@ -1044,17 +1049,20 @@ namespace Nop.Web.Factories
             var filteredSpecs = command.SpecificationOptionIds is null ? null : filterableOptions.Where(fo => command.SpecificationOptionIds.Contains(fo.Id)).ToList();
 
             //products
-            var products = await _productService.SearchProductsAsync(
-                command.PageNumber - 1,
-                command.PageSize,
-                manufacturerIds: manufacturerIds,
-                storeId: currentStore.Id,
-                visibleIndividuallyOnly: true,
-                excludeFeaturedProducts: !_catalogSettings.IgnoreFeaturedProducts && !_catalogSettings.IncludeFeaturedProductsInNormalLists,
-                priceMin: selectedPriceRange?.From,
-                priceMax: selectedPriceRange?.To,
-                filteredSpecOptions: filteredSpecs,
-                orderBy: (ProductSortingEnum)command.OrderBy);
+
+            var products = await _mediator.Send(new SearchProductsQuery
+            {
+                PageIndex = command.PageNumber - 1,
+                PageSize = command.PageSize,
+                ManufacturerIds = manufacturerIds,
+                StoreId = currentStore.Id,
+                VisibleIndividuallyOnly = true,
+                ExcludeFeaturedProducts = !_catalogSettings.IgnoreFeaturedProducts && !_catalogSettings.IncludeFeaturedProductsInNormalLists,
+                PriceMin = selectedPriceRange?.From,
+                PriceMax = selectedPriceRange?.To,
+                FilteredSpecOptions = filteredSpecs,
+                OrderBy = (ProductSortingEnum)command.OrderBy
+            });
 
             var isFiltering = filterableOptions.Any() || selectedPriceRange?.From is not null;
             await PrepareCatalogProductsAsync(model, products, isFiltering);
@@ -1261,11 +1269,15 @@ namespace Nop.Web.Factories
                 {
                     async Task<decimal?> getProductPriceAsync(ProductSortingEnum orderBy)
                     {
-                        var products = await _productService.SearchProductsAsync(0, 1,
-                            vendorId: vendor.Id,
-                            storeId: store.Id,
-                            visibleIndividuallyOnly: true,
-                            orderBy: orderBy);
+                        var products = await _mediator.Send(new SearchProductsQuery
+                        {
+                            PageIndex = 0,
+                            PageSize = 1,
+                            VendorId = vendor.Id,
+                            StoreId = store.Id,
+                            VisibleIndividuallyOnly = true,
+                            OrderBy = orderBy
+                        });
 
                         return products?.FirstOrDefault()?.Price ?? 0;
                     }
@@ -1289,15 +1301,17 @@ namespace Nop.Web.Factories
             }
 
             //products
-            var products = await _productService.SearchProductsAsync(
-                command.PageNumber - 1,
-                command.PageSize,
-                vendorId: vendor.Id,
-                priceMin: selectedPriceRange?.From,
-                priceMax: selectedPriceRange?.To,
-                storeId: store.Id,
-                visibleIndividuallyOnly: true,
-                orderBy: (ProductSortingEnum)command.OrderBy);
+            var products = await _mediator.Send(new SearchProductsQuery
+            {
+                PageIndex = command.PageNumber - 1,
+                PageSize = command.PageSize,
+                VendorId = vendor.Id,
+                StoreId = store.Id,
+                VisibleIndividuallyOnly = true,
+                PriceMin = selectedPriceRange?.From,
+                PriceMax = selectedPriceRange?.To,
+                OrderBy = (ProductSortingEnum)command.OrderBy
+            });
 
             var isFiltering = selectedPriceRange?.From is not null;
             await PrepareCatalogProductsAsync(model, products, isFiltering);
@@ -1507,11 +1521,15 @@ namespace Nop.Web.Factories
                 {
                     async Task<decimal?> getProductPriceAsync(ProductSortingEnum orderBy)
                     {
-                        var products = await _productService.SearchProductsAsync(0, 1,
-                            storeId: store.Id,
-                            productTagId: productTag.Id,
-                            visibleIndividuallyOnly: true,
-                            orderBy: orderBy);
+                        var products = await _mediator.Send(new SearchProductsQuery
+                        {
+                            PageIndex = 0,
+                            PageSize = 1,
+                            StoreId = store.Id,
+                            VisibleIndividuallyOnly = true,
+                            ProductTagId = productTag.Id,
+                            OrderBy = orderBy
+                        });
 
                         return products?.FirstOrDefault()?.Price ?? 0;
                     }
@@ -1535,15 +1553,17 @@ namespace Nop.Web.Factories
             }
 
             //products
-            var products = await _productService.SearchProductsAsync(
-                command.PageNumber - 1,
-                command.PageSize,
-                priceMin: selectedPriceRange?.From,
-                priceMax: selectedPriceRange?.To,
-                storeId: store.Id,
-                productTagId: productTag.Id,
-                visibleIndividuallyOnly: true,
-                orderBy: (ProductSortingEnum)command.OrderBy);
+            var products = await _mediator.Send(new SearchProductsQuery
+            {
+                PageIndex = command.PageNumber - 1,
+                PageSize = command.PageSize,
+                StoreId = store.Id,
+                VisibleIndividuallyOnly = true,
+                PriceMin = selectedPriceRange?.From,
+                PriceMax = selectedPriceRange?.To,
+                ProductTagId = productTag.Id,
+                OrderBy = (ProductSortingEnum)command.OrderBy
+            });
 
             var isFiltering = selectedPriceRange?.From is not null;
             await PrepareCatalogProductsAsync(model, products, isFiltering);
@@ -1785,17 +1805,21 @@ namespace Nop.Web.Factories
                         {
                             async Task<decimal?> getProductPriceAsync(ProductSortingEnum orderBy)
                             {
-                                var products = await _productService.SearchProductsAsync(0, 1,
-                                    categoryIds: categoryIds,
-                                    manufacturerIds: new List<int> { manufacturerId },
-                                    storeId: currentStore.Id,
-                                    visibleIndividuallyOnly: true,
-                                    keywords: searchTerms,
-                                    searchDescriptions: searchInDescriptions,
-                                    searchProductTags: searchInProductTags,
-                                    languageId: workingLanguage.Id,
-                                    vendorId: vendorId,
-                                    orderBy: orderBy);
+                                var products = await _mediator.Send(new SearchProductsQuery
+                                {
+                                    PageIndex = 0,
+                                    PageSize = 1,
+                                    CategoryIds = categoryIds,
+                                    ManufacturerIds = new List<int> { manufacturerId },
+                                    StoreId = currentStore.Id,
+                                    VisibleIndividuallyOnly = true,
+                                    Keywords = searchTerms,
+                                    SearchDescriptions = searchInDescriptions,
+                                    SearchProductTags = searchInProductTags,
+                                    LanguageId = workingLanguage.Id,
+                                    VendorId = vendorId,
+                                    OrderBy = orderBy
+                                });
 
                                 return products?.FirstOrDefault()?.Price ?? 0;
                             }
@@ -1819,21 +1843,22 @@ namespace Nop.Web.Factories
                     }
 
                     //products
-                    products = await _productService.SearchProductsAsync(
-                        command.PageNumber - 1,
-                        command.PageSize,
-                        categoryIds: categoryIds,
-                        manufacturerIds: new List<int> { manufacturerId },
-                        storeId: currentStore.Id,
-                        visibleIndividuallyOnly: true,
-                        keywords: searchTerms,
-                        priceMin: selectedPriceRange?.From,
-                        priceMax: selectedPriceRange?.To,
-                        searchDescriptions: searchInDescriptions,
-                        searchProductTags: searchInProductTags,
-                        languageId: workingLanguage.Id,
-                        orderBy: (ProductSortingEnum)command.OrderBy,
-                        vendorId: vendorId);
+                    products = await _mediator.Send(new SearchProductsQuery
+                    {
+                        PageIndex = command.PageNumber - 1,
+                        PageSize = command.PageSize,
+                        CategoryIds = categoryIds,
+                        ManufacturerIds = new List<int> { manufacturerId },
+                        StoreId = currentStore.Id,
+                        VisibleIndividuallyOnly = true,
+                        PriceMin = selectedPriceRange?.From,
+                        PriceMax = selectedPriceRange?.To,
+                        SearchDescriptions = searchInDescriptions,
+                        SearchProductTags = searchInProductTags,
+                        LanguageId = workingLanguage.Id,
+                        OrderBy = (ProductSortingEnum)command.OrderBy,
+                        VendorId = vendorId
+                    });
 
                     //search term statistics
                     if (!string.IsNullOrEmpty(searchTerms))

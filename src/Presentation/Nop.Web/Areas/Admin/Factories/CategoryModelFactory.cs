@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using MediatR;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Nop.Core.Domain.Catalog;
 using Nop.Core.Domain.Directory;
@@ -10,6 +11,7 @@ using Nop.Services.Catalog;
 using Nop.Services.Directory;
 using Nop.Services.Discounts;
 using Nop.Services.Localization;
+using Nop.Services.Products.Queries;
 using Nop.Services.Seo;
 using Nop.Web.Areas.Admin.Infrastructure.Mapper.Extensions;
 using Nop.Web.Areas.Admin.Models.Catalog;
@@ -36,6 +38,7 @@ namespace Nop.Web.Areas.Admin.Factories
         private readonly IDiscountSupportedModelFactory _discountSupportedModelFactory;
         private readonly ILocalizationService _localizationService;
         private readonly ILocalizedModelFactory _localizedModelFactory;
+        private readonly IMediator _mediator;
         private readonly IProductService _productService;
         private readonly IStoreMappingSupportedModelFactory _storeMappingSupportedModelFactory;
         private readonly IUrlRecordService _urlRecordService;
@@ -53,6 +56,7 @@ namespace Nop.Web.Areas.Admin.Factories
             IDiscountService discountService,
             IDiscountSupportedModelFactory discountSupportedModelFactory,
             ILocalizationService localizationService,
+            IMediator mediator,
             ILocalizedModelFactory localizedModelFactory,
             IProductService productService,
             IStoreMappingSupportedModelFactory storeMappingSupportedModelFactory,
@@ -68,6 +72,7 @@ namespace Nop.Web.Areas.Admin.Factories
             _discountSupportedModelFactory = discountSupportedModelFactory;
             _localizationService = localizationService;
             _localizedModelFactory = localizedModelFactory;
+            _mediator = mediator;
             _productService = productService;
             _storeMappingSupportedModelFactory = storeMappingSupportedModelFactory;
             _urlRecordService = urlRecordService;
@@ -348,14 +353,18 @@ namespace Nop.Web.Areas.Admin.Factories
                 throw new ArgumentNullException(nameof(searchModel));
 
             //get products
-            var products = await _productService.SearchProductsAsync(showHidden: true,
-                categoryIds: new List<int> { searchModel.SearchCategoryId },
-                manufacturerIds: new List<int> { searchModel.SearchManufacturerId },
-                storeId: searchModel.SearchStoreId,
-                vendorId: searchModel.SearchVendorId,
-                productType: searchModel.SearchProductTypeId > 0 ? (ProductType?)searchModel.SearchProductTypeId : null,
-                keywords: searchModel.SearchProductName,
-                pageIndex: searchModel.Page - 1, pageSize: searchModel.PageSize);
+            var products = await _mediator.Send(new SearchProductsQuery
+            {
+                PageIndex = searchModel.Page - 1,
+                PageSize = searchModel.PageSize,
+                ShowHidden = true,
+                CategoryIds = new List<int> { searchModel.SearchCategoryId },
+                ManufacturerIds = new List<int> { searchModel.SearchManufacturerId },
+                StoreId = searchModel.SearchStoreId,
+                VendorId = searchModel.SearchVendorId,
+                ProductType = searchModel.SearchProductTypeId > 0 ? (ProductType?)searchModel.SearchProductTypeId : null,
+                Keywords = searchModel.SearchProductName
+            });
 
             //prepare grid model
             var model = await new AddProductToCategoryListModel().PrepareToGridAsync(searchModel, products, () =>
@@ -373,6 +382,6 @@ namespace Nop.Web.Areas.Admin.Factories
             return model;
         }
 
-        #endregion
-    }
+    #endregion
+}
 }

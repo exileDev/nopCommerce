@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
@@ -33,6 +34,7 @@ using Nop.Services.Localization;
 using Nop.Services.Media;
 using Nop.Services.News;
 using Nop.Services.Orders;
+using Nop.Services.Products.Queries;
 using Nop.Services.Security;
 using Nop.Services.Seo;
 using Nop.Services.Themes;
@@ -69,6 +71,7 @@ namespace Nop.Web.Factories
         private readonly ILanguageService _languageService;
         private readonly ILocalizationService _localizationService;
         private readonly IManufacturerService _manufacturerService;
+        private readonly IMediator _mediator;
         private readonly INewsService _newsService;
         private readonly INopFileProvider _fileProvider;
         private readonly INopHtmlHelper _nopHtmlHelper;
@@ -117,6 +120,7 @@ namespace Nop.Web.Factories
             ILanguageService languageService,
             ILocalizationService localizationService,
             IManufacturerService manufacturerService,
+            IMediator mediator,
             INewsService newsService,
             INopFileProvider fileProvider,
             INopHtmlHelper nopHtmlHelper,
@@ -161,6 +165,7 @@ namespace Nop.Web.Factories
             _languageService = languageService;
             _localizationService = localizationService;
             _manufacturerService = manufacturerService;
+            _mediator = mediator;
             _newsService = newsService;
             _fileProvider = fileProvider;
             _nopHtmlHelper = nopHtmlHelper;
@@ -735,7 +740,13 @@ namespace Nop.Web.Factories
                 if (_sitemapSettings.SitemapIncludeProducts)
                 {
                     var productsGroupTitle = await _localizationService.GetResourceAsync("Sitemap.Products");
-                    var products = await _productService.SearchProductsAsync(0, storeId: store.Id, visibleIndividuallyOnly: true);
+                    var products = await _mediator.Send(new SearchProductsQuery
+                    {
+                        PageIndex = 0,
+                        StoreId = store.Id,
+                        VisibleIndividuallyOnly = true
+                    });
+
                     model.Items.AddRange(await products.SelectAwait(async product => new SitemapModel.SitemapItemModel
                     {
                         GroupTitle = productsGroupTitle,

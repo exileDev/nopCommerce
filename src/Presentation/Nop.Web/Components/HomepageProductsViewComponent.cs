@@ -23,7 +23,6 @@ namespace Nop.Web.Components
             IProductModelFactory productModelFactory,
             IProductService productService,
             IStoreMappingService storeMappingService,
-            
             IMediator mediator)
         {
             _aclService = aclService;

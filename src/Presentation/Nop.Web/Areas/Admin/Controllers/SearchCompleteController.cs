@@ -1,8 +1,10 @@
 ﻿using System.Linq;
 using System.Threading.Tasks;
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Nop.Core;
 using Nop.Services.Catalog;
+using Nop.Services.Products.Queries;
 using Nop.Services.Security;
 
 namespace Nop.Web.Areas.Admin.Controllers
@@ -11,8 +13,8 @@ namespace Nop.Web.Areas.Admin.Controllers
     {
         #region Fields
 
+        private readonly IMediator _mediator;
         private readonly IPermissionService _permissionService;
-        private readonly IProductService _productService;
         private readonly IWorkContext _workContext;
 
         #endregion
@@ -20,12 +22,12 @@ namespace Nop.Web.Areas.Admin.Controllers
         #region Ctor
 
         public SearchCompleteController(
+            IMediator mediator,
             IPermissionService permissionService,
-            IProductService productService,
             IWorkContext workContext)
         {
+            _mediator = mediator;
             _permissionService = permissionService;
-            _productService = productService;
             _workContext = workContext;
         }
 
@@ -52,18 +54,21 @@ namespace Nop.Web.Areas.Admin.Controllers
 
             //products
             const int productNumber = 15;
-            var products = await _productService.SearchProductsAsync(0,
-                vendorId: vendorId,
-                keywords: term,
-                pageSize: productNumber,
-                showHidden: true);
+            var products = await _mediator.Send(new SearchProductsQuery
+            {
+                PageIndex = 0,
+                VendorId = vendorId,
+                Keywords = term,
+                PageSize = productNumber,
+                ShowHidden = true
+            });
 
             var result = (from p in products
-                            select new
-                            {
-                                label = p.Name,
-                                productid = p.Id
-                            }).ToList();
+                          select new
+                          {
+                              label = p.Name,
+                              productid = p.Id
+                          }).ToList();
 
             return Json(result);
         }

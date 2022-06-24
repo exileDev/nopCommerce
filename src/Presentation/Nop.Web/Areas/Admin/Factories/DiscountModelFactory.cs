@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using MediatR;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.WebUtilities;
 using Nop.Core;
@@ -15,6 +16,7 @@ using Nop.Services.Discounts;
 using Nop.Services.Helpers;
 using Nop.Services.Localization;
 using Nop.Services.Orders;
+using Nop.Services.Products.Queries;
 using Nop.Services.Seo;
 using Nop.Web.Areas.Admin.Infrastructure.Mapper.Extensions;
 using Nop.Web.Areas.Admin.Models.Catalog;
@@ -39,6 +41,7 @@ namespace Nop.Web.Areas.Admin.Factories
         private readonly IDiscountService _discountService;
         private readonly ILocalizationService _localizationService;
         private readonly IManufacturerService _manufacturerService;
+        private readonly IMediator _mediator;
         private readonly IOrderService _orderService;
         private readonly IPriceFormatter _priceFormatter;
         private readonly IProductService _productService;
@@ -58,6 +61,7 @@ namespace Nop.Web.Areas.Admin.Factories
             IDiscountService discountService,
             ILocalizationService localizationService,
             IManufacturerService manufacturerService,
+            IMediator mediator,
             IOrderService orderService,
             IPriceFormatter priceFormatter,
             IProductService productService,
@@ -73,6 +77,7 @@ namespace Nop.Web.Areas.Admin.Factories
             _discountService = discountService;
             _localizationService = localizationService;
             _manufacturerService = manufacturerService;
+            _mediator = mediator;
             _orderService = orderService;
             _priceFormatter = priceFormatter;
             _productService = productService;
@@ -512,14 +517,18 @@ namespace Nop.Web.Areas.Admin.Factories
                 throw new ArgumentNullException(nameof(searchModel));
 
             //get products
-            var products = await _productService.SearchProductsAsync(showHidden: true,
-                categoryIds: new List<int> { searchModel.SearchCategoryId },
-                manufacturerIds: new List<int> { searchModel.SearchManufacturerId },
-                storeId: searchModel.SearchStoreId,
-                vendorId: searchModel.SearchVendorId,
-                productType: searchModel.SearchProductTypeId > 0 ? (ProductType?)searchModel.SearchProductTypeId : null,
-                keywords: searchModel.SearchProductName,
-                pageIndex: searchModel.Page - 1, pageSize: searchModel.PageSize);
+            var products = await _mediator.Send(new SearchProductsQuery
+            {
+                PageIndex = searchModel.Page - 1,
+                PageSize = searchModel.PageSize,
+                ShowHidden = true,
+                CategoryIds = new List<int> { searchModel.SearchCategoryId },
+                ManufacturerIds = new List<int> { searchModel.SearchManufacturerId },
+                StoreId = searchModel.SearchStoreId,
+                VendorId = searchModel.SearchVendorId,
+                ProductType = searchModel.SearchProductTypeId > 0 ? (ProductType?)searchModel.SearchProductTypeId : null,
+                Keywords = searchModel.SearchProductName
+            });
 
             //prepare grid model
             var model = await new AddProductToDiscountListModel().PrepareToGridAsync(searchModel, products, () =>

@@ -6,6 +6,7 @@ using System.Net;
 using System.Text;
 using System.Text.Encodings.Web;
 using System.Threading.Tasks;
+using MediatR;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Nop.Core;
 using Nop.Core.Domain.Catalog;
@@ -23,6 +24,7 @@ using Nop.Services.Helpers;
 using Nop.Services.Localization;
 using Nop.Services.Media;
 using Nop.Services.Orders;
+using Nop.Services.Products.Queries;
 using Nop.Services.Seo;
 using Nop.Services.Shipping;
 using Nop.Services.Stores;
@@ -57,6 +59,7 @@ namespace Nop.Web.Areas.Admin.Factories
         private readonly ILocalizedModelFactory _localizedModelFactory;
         private readonly IManufacturerService _manufacturerService;
         private readonly IMeasureService _measureService;
+        private readonly IMediator _mediator;
         private readonly IOrderService _orderService;
         private readonly IPictureService _pictureService;
         private readonly IProductAttributeFormatter _productAttributeFormatter;
@@ -97,6 +100,7 @@ namespace Nop.Web.Areas.Admin.Factories
             ILocalizedModelFactory localizedModelFactory,
             IManufacturerService manufacturerService,
             IMeasureService measureService,
+            IMediator mediator,
             IOrderService orderService,
             IPictureService pictureService,
             IProductAttributeFormatter productAttributeFormatter,
@@ -134,6 +138,7 @@ namespace Nop.Web.Areas.Admin.Factories
             _manufacturerService = manufacturerService;
             _measureService = measureService;
             _measureSettings = measureSettings;
+            _mediator = mediator;
             _orderService = orderService;
             _pictureService = pictureService;
             _productAttributeFormatter = productAttributeFormatter;
@@ -728,16 +733,20 @@ namespace Nop.Web.Areas.Admin.Factories
             }
 
             //get products
-            var products = await _productService.SearchProductsAsync(showHidden: true,
-                categoryIds: categoryIds,
-                manufacturerIds: new List<int> { searchModel.SearchManufacturerId },
-                storeId: searchModel.SearchStoreId,
-                vendorId: searchModel.SearchVendorId,
-                warehouseId: searchModel.SearchWarehouseId,
-                productType: searchModel.SearchProductTypeId > 0 ? (ProductType?)searchModel.SearchProductTypeId : null,
-                keywords: searchModel.SearchProductName,
-                pageIndex: searchModel.Page - 1, pageSize: searchModel.PageSize,
-                overridePublished: overridePublished);
+            var products = await _mediator.Send(new SearchProductsQuery
+            {
+                PageIndex = searchModel.Page - 1,
+                PageSize = searchModel.PageSize,
+                ShowHidden = true,
+                CategoryIds = categoryIds,
+                ManufacturerIds = new List<int> { searchModel.SearchManufacturerId },
+                StoreId = searchModel.SearchStoreId,
+                VendorId = searchModel.SearchVendorId,
+                WarehouseId = searchModel.SearchWarehouseId,
+                ProductType = searchModel.SearchProductTypeId > 0 ? (ProductType?)searchModel.SearchProductTypeId : null,
+                Keywords = searchModel.SearchProductName,
+                OverridePublished = overridePublished
+            });
 
             //prepare list model
             var model = await new ProductListModel().PrepareToGridAsync(searchModel, products, () =>
@@ -1020,14 +1029,18 @@ namespace Nop.Web.Areas.Admin.Factories
                 searchModel.SearchVendorId = currentVendor.Id;
 
             //get products
-            var products = await _productService.SearchProductsAsync(showHidden: true,
-                categoryIds: new List<int> { searchModel.SearchCategoryId },
-                manufacturerIds: new List<int> { searchModel.SearchManufacturerId },
-                storeId: searchModel.SearchStoreId,
-                vendorId: searchModel.SearchVendorId,
-                productType: searchModel.SearchProductTypeId > 0 ? (ProductType?)searchModel.SearchProductTypeId : null,
-                keywords: searchModel.SearchProductName,
-                pageIndex: searchModel.Page - 1, pageSize: searchModel.PageSize);
+            var products = await _mediator.Send(new SearchProductsQuery
+            {
+                PageIndex = searchModel.Page - 1,
+                PageSize = searchModel.PageSize,
+                ShowHidden = true,
+                CategoryIds = new List<int> { searchModel.SearchCategoryId },
+                ManufacturerIds = new List<int> { searchModel.SearchManufacturerId },
+                StoreId = searchModel.SearchStoreId,
+                VendorId = searchModel.SearchVendorId,
+                ProductType = searchModel.SearchProductTypeId > 0 ? (ProductType?)searchModel.SearchProductTypeId : null,
+                Keywords = searchModel.SearchProductName
+            });
 
             //prepare grid model
             var model = await new AddRequiredProductListModel().PrepareToGridAsync(searchModel, products, () =>
@@ -1138,14 +1151,18 @@ namespace Nop.Web.Areas.Admin.Factories
                 searchModel.SearchVendorId = currentVendor.Id;
 
             //get products
-            var products = await _productService.SearchProductsAsync(showHidden: true,
-                categoryIds: new List<int> { searchModel.SearchCategoryId },
-                manufacturerIds: new List<int> { searchModel.SearchManufacturerId },
-                storeId: searchModel.SearchStoreId,
-                vendorId: searchModel.SearchVendorId,
-                productType: searchModel.SearchProductTypeId > 0 ? (ProductType?)searchModel.SearchProductTypeId : null,
-                keywords: searchModel.SearchProductName,
-                pageIndex: searchModel.Page - 1, pageSize: searchModel.PageSize);
+            var products = await _mediator.Send(new SearchProductsQuery
+            {
+                PageIndex = searchModel.Page - 1,
+                PageSize = searchModel.PageSize,
+                ShowHidden = true,
+                CategoryIds = new List<int> { searchModel.SearchCategoryId },
+                ManufacturerIds = new List<int> { searchModel.SearchManufacturerId },
+                StoreId = searchModel.SearchStoreId,
+                VendorId = searchModel.SearchVendorId,
+                ProductType = searchModel.SearchProductTypeId > 0 ? (ProductType?)searchModel.SearchProductTypeId : null,
+                Keywords = searchModel.SearchProductName
+            });
 
             //prepare grid model
             var model = await new AddRelatedProductListModel().PrepareToGridAsync(searchModel, products, () =>
@@ -1261,14 +1278,18 @@ namespace Nop.Web.Areas.Admin.Factories
                 searchModel.SearchVendorId = currentVendor.Id;
 
             //get products
-            var products = await _productService.SearchProductsAsync(showHidden: true,
-                categoryIds: new List<int> { searchModel.SearchCategoryId },
-                manufacturerIds: new List<int> { searchModel.SearchManufacturerId },
-                storeId: searchModel.SearchStoreId,
-                vendorId: searchModel.SearchVendorId,
-                productType: searchModel.SearchProductTypeId > 0 ? (ProductType?)searchModel.SearchProductTypeId : null,
-                keywords: searchModel.SearchProductName,
-                pageIndex: searchModel.Page - 1, pageSize: searchModel.PageSize);
+            var products = await _mediator.Send(new SearchProductsQuery
+            {
+                PageIndex = searchModel.Page - 1,
+                PageSize = searchModel.PageSize,
+                ShowHidden = true,
+                CategoryIds = new List<int> { searchModel.SearchCategoryId },
+                ManufacturerIds = new List<int> { searchModel.SearchManufacturerId },
+                StoreId = searchModel.SearchStoreId,
+                VendorId = searchModel.SearchVendorId,
+                ProductType = searchModel.SearchProductTypeId > 0 ? (ProductType?)searchModel.SearchProductTypeId : null,
+                Keywords = searchModel.SearchProductName
+            });
 
             //prepare grid model
             var model = await new AddCrossSellProductListModel().PrepareToGridAsync(searchModel, products, () =>
@@ -1379,14 +1400,18 @@ namespace Nop.Web.Areas.Admin.Factories
                 searchModel.SearchVendorId = currentVendor.Id;
 
             //get products
-            var products = await _productService.SearchProductsAsync(showHidden: true,
-                categoryIds: new List<int> { searchModel.SearchCategoryId },
-                manufacturerIds: new List<int> { searchModel.SearchManufacturerId },
-                storeId: searchModel.SearchStoreId,
-                vendorId: searchModel.SearchVendorId,
-                productType: searchModel.SearchProductTypeId > 0 ? (ProductType?)searchModel.SearchProductTypeId : null,
-                keywords: searchModel.SearchProductName,
-                pageIndex: searchModel.Page - 1, pageSize: searchModel.PageSize);
+            var products = await _mediator.Send(new SearchProductsQuery
+            {
+                PageIndex = searchModel.Page - 1,
+                PageSize = searchModel.PageSize,
+                ShowHidden = true,
+                CategoryIds = new List<int> { searchModel.SearchCategoryId },
+                ManufacturerIds = new List<int> { searchModel.SearchManufacturerId },
+                StoreId = searchModel.SearchStoreId,
+                VendorId = searchModel.SearchVendorId,
+                ProductType = searchModel.SearchProductTypeId > 0 ? (ProductType?)searchModel.SearchProductTypeId : null,
+                Keywords = searchModel.SearchProductName
+            });
 
             //prepare grid model
             var model = await new AddAssociatedProductListModel().PrepareToGridAsync(searchModel, products, () =>
@@ -1604,7 +1629,7 @@ namespace Nop.Web.Areas.Admin.Factories
                 default:
                     throw new ArgumentOutOfRangeException(nameof(attribute.AttributeType));
             }
-            
+
             model.Locales = await _localizedModelFactory.PrepareLocalizedModelsAsync(
                 async (AddSpecificationAttributeLocalizedModel locale, int languageId) =>
                 {
@@ -2236,14 +2261,18 @@ namespace Nop.Web.Areas.Admin.Factories
                 searchModel.SearchVendorId = currentVendor.Id;
 
             //get products
-            var products = await _productService.SearchProductsAsync(showHidden: true,
-                categoryIds: new List<int> { searchModel.SearchCategoryId },
-                manufacturerIds: new List<int> { searchModel.SearchManufacturerId },
-                storeId: searchModel.SearchStoreId,
-                vendorId: searchModel.SearchVendorId,
-                productType: searchModel.SearchProductTypeId > 0 ? (ProductType?)searchModel.SearchProductTypeId : null,
-                keywords: searchModel.SearchProductName,
-                pageIndex: searchModel.Page - 1, pageSize: searchModel.PageSize);
+            var products = await _mediator.Send(new SearchProductsQuery
+            {
+                PageIndex = searchModel.Page - 1,
+                PageSize = searchModel.PageSize,
+                ShowHidden = true,
+                CategoryIds = new List<int> { searchModel.SearchCategoryId },
+                ManufacturerIds = new List<int> { searchModel.SearchManufacturerId },
+                StoreId = searchModel.SearchStoreId,
+                VendorId = searchModel.SearchVendorId,
+                ProductType = searchModel.SearchProductTypeId > 0 ? (ProductType?)searchModel.SearchProductTypeId : null,
+                Keywords = searchModel.SearchProductName
+            });
 
             //prepare grid model
             var model = await new AssociateProductToAttributeValueListModel().PrepareToGridAsync(searchModel, products, () =>

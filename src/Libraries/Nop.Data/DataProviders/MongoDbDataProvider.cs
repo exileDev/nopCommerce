@@ -28,20 +28,20 @@ public partial class MongoDbDataProvider : INopDataProvider
 
     #region Utilities
 
-    private MongoUrl GetCurrentMongoUrl()
+    private static MongoUrl GetCurrentMongoUrl()
     {
         return new MongoUrl(DataSettingsManager.LoadSettings().ConnectionString);
     }
-    private MongoClient GetClient()
+    private static MongoClient GetClient()
     {
         var clientSettings = MongoClientSettings.FromUrl(GetCurrentMongoUrl());
         return new MongoClient(clientSettings);
     }
-    private IMongoDatabase GetDatabase()
+    private static IMongoDatabase GetDatabase()
     {
         return GetClient().GetDatabase(GetCurrentMongoUrl().DatabaseName);
     }
-    private IMongoCollection<TEntity> GetCollection<TEntity>()
+    private static IMongoCollection<TEntity> GetCollection<TEntity>()
     {
         return GetDatabase().GetCollection<TEntity>(NameCompatibilityManager.GetTableName(typeof(TEntity)));
     }
@@ -168,7 +168,10 @@ public partial class MongoDbDataProvider : INopDataProvider
 
     public IQueryable<TEntity> GetTable<TEntity>() where TEntity : BaseEntity
     {
-        return GetCollection<TEntity>().AsQueryable();
+        var collation = new Collation("en_US", strength: CollationStrength.Secondary);
+        var aggregateOptions = new AggregateOptions { Collation = collation };
+
+        return GetCollection<TEntity>().AsQueryable(aggregateOptions);
     }
 
     public Task<int?> GetTableIdentAsync<TEntity>() where TEntity : BaseEntity

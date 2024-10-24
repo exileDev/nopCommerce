@@ -893,7 +893,7 @@ public partial class LocalizationService : ILocalizationService
     {
         _lsrRepository.Delete(locale =>
             (!languageId.HasValue || locale.LanguageId == languageId.Value) &&
-            resourceNames.Contains(locale.ResourceName, StringComparer.InvariantCultureIgnoreCase));
+            resourceNames.Contains(locale.ResourceName));
 
         //clear cache
         _staticCacheManager.RemoveByPrefix(NopEntityCacheDefaults<LocaleStringResource>.Prefix);

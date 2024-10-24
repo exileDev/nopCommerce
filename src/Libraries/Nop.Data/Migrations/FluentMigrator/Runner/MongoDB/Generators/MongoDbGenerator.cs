@@ -10,6 +10,9 @@ using MongoDB.Bson;
 using MongoDB.Bson.Serialization;
 using MongoDB.Driver;
 using Nop.Core;
+using Nop.Core.Domain.Common;
+using Nop.Core.Domain.Discounts;
+using Nop.Core.Domain.Stores;
 using Nop.Core.Infrastructure;
 
 namespace Nop.Data.Migrations.FluentMigrator.Runner.MongoDB.Generators;
@@ -70,26 +73,33 @@ public class MongoDbGenerator : GeneratorBase
 
         var type = new Mapping.BaseNameCompatibility().TableNames.FirstOrDefault(x => x.Value == expression.TableName).Key
             ?? Singleton<ITypeFinder>.Instance.FindClassesOfType<BaseEntity>(false).Where(t => t.Name == expression.TableName).FirstOrDefault();
-        var classMap = new BsonClassMap(type, BsonClassMap.LookupClassMap(typeof(BaseEntity)));
+
+        var lookup = type.IsSubclassOf(typeof(SoftDeletedEntity)) ? typeof(SoftDeletedEntity) :
+            (type.IsSubclassOf(typeof(BaseEntity)) ? typeof(BaseEntity) : typeof(DiscountMapping));
+
+        var classMap = new BsonClassMap(type, BsonClassMap.LookupClassMap(lookup));
+
         classMap.AutoMap();
+
         return "";
     }
-    private BsonDocument GetPropertyDefinition(ColumnDefinition columnDefinition)
+    private static BsonDocument GetPropertyDefinition(ColumnDefinition columnDefinition)
     {
-        var fieldDefinition = new BsonDocument();
-
-        fieldDefinition.Add(new BsonElement("bsonType", columnDefinition.Type switch
+        var fieldDefinition = new BsonDocument
         {
-            DbType.String => "string",
-            DbType.Decimal => "decimal",
-            DbType.Int32 => "int",
-            DbType.Int64 => "long",
-            DbType.Boolean => "bool",
-            DbType.Binary => "binData",
-            DbType.DateTime2 => "date",
-            DbType.Guid => "binData",
-            _ => throw new Exception()
-        }));
+            new BsonElement("bsonType", columnDefinition.Type switch
+            {
+                DbType.String => "string",
+                DbType.Decimal => "decimal",
+                DbType.Int32 => "int",
+                DbType.Int64 => "long",
+                DbType.Boolean => "bool",
+                DbType.Binary => "binData",
+                DbType.DateTime2 => "date",
+                DbType.Guid => "binData",
+                _ => throw new Exception()
+            })
+        };
         if (columnDefinition.Type == DbType.String && columnDefinition.Size.HasValue)
         {
             fieldDefinition.Add(new BsonElement("maxLength", columnDefinition.Size.Value));
@@ -164,7 +174,7 @@ public class MongoDbGenerator : GeneratorBase
         collection.InsertMany(GenerateColumnNamesAndValues(expression.Rows));
         return "";
     }
-    protected IEnumerable<BsonDocument> GenerateColumnNamesAndValues(IEnumerable<List<KeyValuePair<string, object>>> rows)
+    protected static IEnumerable<BsonDocument> GenerateColumnNamesAndValues(IEnumerable<List<KeyValuePair<string, object>>> rows)
     {
         foreach (var row in rows)
         {

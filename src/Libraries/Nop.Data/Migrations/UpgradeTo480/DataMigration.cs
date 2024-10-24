@@ -19,7 +19,7 @@ public class DataMigration : Migration
     public override void Up()
     {
         //#7108 New message template
-        if (!_dataProvider.GetTable<MessageTemplate>().Any(st => string.Compare(st.Name, MessageTemplateSystemNames.ORDER_CANCELLED_VENDOR_NOTIFICATION, StringComparison.InvariantCultureIgnoreCase) == 0))
+        if (!_dataProvider.GetTable<MessageTemplate>().Any(st => st.Name.CompareTo(MessageTemplateSystemNames.ORDER_CANCELLED_VENDOR_NOTIFICATION) == 0))
         {
             var eaGeneral = _dataProvider.GetTable<EmailAccount>().FirstOrDefault() ?? throw new Exception("Default email account cannot be loaded");
             _dataProvider.InsertEntity(new MessageTemplate()

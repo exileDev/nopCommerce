@@ -1283,10 +1283,20 @@ public partial class ProductService : IProductService
         //filter by products with tracking inventory
         query = query.Where(product => product.ManageInventoryMethodId == (int)ManageInventoryMethod.ManageStock);
 
+        query = (from p in query
+                join pwi in _productWarehouseInventoryRepository.Table on p.Id equals pwi.ProductId into joined 
+                from sub in joined.DefaultIfEmpty()
+                group sub by new { p.Id, p } into g
+                select new
+                {
+                    StockSum = g.Key.p.UseMultipleWarehouses ? g.Sum(pp => pp.StockQuantity - pp.ReservedQuantity) : g.Key.p.StockQuantity,
+                    pp = g.Key.p
+                }).Where(x => x.StockSum <= x.pp.MinStockQuantity).Select(x => x.pp) ;
+
         //filter by products with stock quantity less than the minimum
-        query = query.Where(product =>
-            (product.UseMultipleWarehouses ? _productWarehouseInventoryRepository.Table.Where(pwi => pwi.ProductId == product.Id).Sum(pwi => pwi.StockQuantity - pwi.ReservedQuantity)
-                : product.StockQuantity) <= product.MinStockQuantity);
+        //query = query.Where(product =>
+        //    (product.UseMultipleWarehouses ? _productWarehouseInventoryRepository.Table.Where(pwi => pwi.ProductId == product.Id).Sum(pwi => pwi.StockQuantity - pwi.ReservedQuantity)
+        //        : product.StockQuantity) <= product.MinStockQuantity);
 
         //ignore deleted products
         query = query.Where(product => !product.Deleted);

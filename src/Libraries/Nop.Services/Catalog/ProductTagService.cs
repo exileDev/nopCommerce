@@ -1,4 +1,5 @@
-﻿using Nop.Core;
+﻿using System.Security.Principal;
+using Nop.Core;
 using Nop.Core.Caching;
 using Nop.Core.Domain.Catalog;
 using Nop.Data;
@@ -281,21 +282,25 @@ public partial class ProductTagService : IProductTagService
                 //apply store mapping constraints
                 productsQuery = await _storeMappingService.ApplyStoreMapping(productsQuery, storeId);
 
-                query = query.Where(pc => productsQuery.Any(p => !p.Deleted && pc.ProductId == p.Id));
+                query = from ppt in query
+                        join p in productsQuery on ppt.ProductId equals p.Id
+                        where p.Published && !p.Deleted
+                        select ppt;
             }
 
             if (!showHidden)
             {
-                productsQuery = productsQuery.Where(p => p.Published);
-
                 //apply ACL constraints
                 productsQuery = await _aclService.ApplyAcl(productsQuery, customerRoleIds);
 
-                query = query.Where(pc => productsQuery.Any(p => !p.Deleted && pc.ProductId == p.Id));
+                query = from ppt in query
+                        join p in productsQuery on ppt.ProductId equals p.Id
+                        where p.Published && !p.Deleted
+                        select ppt;
             }
 
-            var pTagCount = from pt in _productTagRepository.Table
-                join ptm in query on pt.Id equals ptm.ProductTagId
+            var pTagCount = from ptm in query
+                join pt in _productTagRepository.Table on ptm.ProductId equals pt.Id
                 group ptm by ptm.ProductTagId into ptmGrouped
                 select new
                 {

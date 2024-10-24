@@ -10,7 +10,7 @@ namespace Nop.Core.Domain.Catalog;
 /// <summary>
 /// Represents a manufacturer
 /// </summary>
-public partial class Manufacturer : BaseEntity, ILocalizedEntity, ISlugSupported, IAclSupported, IStoreMappingSupported, IDiscountSupported<DiscountManufacturerMapping>, ISoftDeletedEntity
+public partial class Manufacturer : SoftDeletedEntity, ILocalizedEntity, ISlugSupported, IAclSupported, IStoreMappingSupported, IDiscountSupported<DiscountManufacturerMapping>
 {
     /// <summary>
     /// Gets or sets the name
@@ -76,11 +76,6 @@ public partial class Manufacturer : BaseEntity, ILocalizedEntity, ISlugSupported
     /// Gets or sets a value indicating whether the entity is published
     /// </summary>
     public bool Published { get; set; }
-
-    /// <summary>
-    /// Gets or sets a value indicating whether the entity has been deleted
-    /// </summary>
-    public bool Deleted { get; set; }
 
     /// <summary>
     /// Gets or sets the display order

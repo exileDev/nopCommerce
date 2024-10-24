@@ -6,7 +6,7 @@ namespace Nop.Core.Domain.Customers;
 /// <summary>
 /// Represents a customer
 /// </summary>
-public partial class Customer : BaseEntity, ISoftDeletedEntity
+public partial class Customer : SoftDeletedEntity
 {
     public Customer()
     {
@@ -187,11 +187,6 @@ public partial class Customer : BaseEntity, ISoftDeletedEntity
     /// Gets or sets a value indicating whether the customer is active
     /// </summary>
     public bool Active { get; set; }
-
-    /// <summary>
-    /// Gets or sets a value indicating whether the customer has been deleted
-    /// </summary>
-    public bool Deleted { get; set; }
 
     /// <summary>
     /// Gets or sets a value indicating whether the customer account is system

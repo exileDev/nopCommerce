@@ -444,19 +444,15 @@ public partial class SpecificationAttributeService : ISpecificationAttributeServ
             subCategoryIds = await _categoryService.GetChildCategoryIdsAsync(categoryId, store.Id);
         }
 
-        var productCategoryQuery =
-            from pc in _productCategoryRepository.Table
-            where (pc.CategoryId == categoryId || (_catalogSettings.ShowProductsFromSubcategories && subCategoryIds.Contains(pc.CategoryId))) &&
-                  (_catalogSettings.IncludeFeaturedProductsInNormalLists || !pc.IsFeaturedProduct)
-            select pc;
-
         var result =
             from sao in _specificationAttributeOptionRepository.Table
             join psa in _productSpecificationAttributeRepository.Table on sao.Id equals psa.SpecificationAttributeOptionId
             join p in productsQuery on psa.ProductId equals p.Id
-            join pc in productCategoryQuery on p.Id equals pc.ProductId
+            join pc in _productCategoryRepository.Table on psa.ProductId equals pc.ProductId
             join sa in _specificationAttributeRepository.Table on sao.SpecificationAttributeId equals sa.Id
-            where psa.AllowFiltering
+            where (pc.CategoryId == categoryId || (_catalogSettings.ShowProductsFromSubcategories && subCategoryIds.Contains(pc.CategoryId))) &&
+                  (_catalogSettings.IncludeFeaturedProductsInNormalLists || !pc.IsFeaturedProduct) && 
+                  psa.AllowFiltering
             orderby
                 sa.DisplayOrder, sa.Name,
                 sao.DisplayOrder, sao.Name

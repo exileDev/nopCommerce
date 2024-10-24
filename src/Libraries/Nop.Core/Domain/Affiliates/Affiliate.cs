@@ -5,7 +5,7 @@ namespace Nop.Core.Domain.Affiliates;
 /// <summary>
 /// Represents an affiliate
 /// </summary>
-public partial class Affiliate : BaseEntity, ISoftDeletedEntity
+public partial class Affiliate : SoftDeletedEntity
 {
     /// <summary>
     /// Gets or sets the address identifier
@@ -21,11 +21,6 @@ public partial class Affiliate : BaseEntity, ISoftDeletedEntity
     /// Gets or sets the friendly name for generated affiliate URL (by default affiliate ID is used)
     /// </summary>
     public string FriendlyUrlName { get; set; }
-
-    /// <summary>
-    /// Gets or sets a value indicating whether the entity has been deleted
-    /// </summary>
-    public bool Deleted { get; set; }
 
     /// <summary>
     /// Gets or sets a value indicating whether the entity is active

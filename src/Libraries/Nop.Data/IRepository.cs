@@ -17,7 +17,7 @@ public partial interface IRepository<TEntity> where TEntity : BaseEntity
     /// </summary>
     /// <param name="id">Entity entry identifier</param>
     /// <param name="getCacheKey">Function to get a cache key; pass null to don't cache; return null from this function to use the default key</param>
-    /// <param name="includeDeleted">Whether to include deleted items (applies only to <see cref="Nop.Core.Domain.Common.ISoftDeletedEntity"/> entities)</param>
+    /// <param name="includeDeleted">Whether to include deleted items (applies only to <see cref="Nop.Core.Domain.Common.SoftDeletedEntity"/> entities)</param>
     /// <param name="useShortTermCache">Whether to use short term cache instead of static cache</param>
     /// <returns>
     /// A task that represents the asynchronous operation
@@ -30,7 +30,7 @@ public partial interface IRepository<TEntity> where TEntity : BaseEntity
     /// </summary>
     /// <param name="id">Entity entry identifier</param>
     /// <param name="getCacheKey">Function to get a cache key; pass null to don't cache; return null from this function to use the default key</param>
-    /// <param name="includeDeleted">Whether to include deleted items (applies only to <see cref="Nop.Core.Domain.Common.ISoftDeletedEntity"/> entities)</param>
+    /// <param name="includeDeleted">Whether to include deleted items (applies only to <see cref="Nop.Core.Domain.Common.SoftDeletedEntity"/> entities)</param>
     /// <returns>
     /// The entity entry
     /// </returns>
@@ -41,7 +41,7 @@ public partial interface IRepository<TEntity> where TEntity : BaseEntity
     /// </summary>
     /// <param name="ids">Entity entry identifiers</param>
     /// <param name="getCacheKey">Function to get a cache key; pass null to don't cache; return null from this function to use the default key</param>
-    /// <param name="includeDeleted">Whether to include deleted items (applies only to <see cref="Nop.Core.Domain.Common.ISoftDeletedEntity"/> entities)</param>
+    /// <param name="includeDeleted">Whether to include deleted items (applies only to <see cref="Nop.Core.Domain.Common.SoftDeletedEntity"/> entities)</param>
     /// <returns>
     /// A task that represents the asynchronous operation
     /// The task result contains the entity entries
@@ -53,7 +53,7 @@ public partial interface IRepository<TEntity> where TEntity : BaseEntity
     /// </summary>
     /// <param name="func">Function to select entries</param>
     /// <param name="getCacheKey">Function to get a cache key; pass null to don't cache; return null from this function to use the default key</param>
-    /// <param name="includeDeleted">Whether to include deleted items (applies only to <see cref="Nop.Core.Domain.Common.ISoftDeletedEntity"/> entities)</param>
+    /// <param name="includeDeleted">Whether to include deleted items (applies only to <see cref="Nop.Core.Domain.Common.SoftDeletedEntity"/> entities)</param>
     /// <returns>
     /// A task that represents the asynchronous operation
     /// The task result contains the entity entries
@@ -66,7 +66,7 @@ public partial interface IRepository<TEntity> where TEntity : BaseEntity
     /// </summary>
     /// <param name="func">Function to select entries</param>
     /// <param name="getCacheKey">Function to get a cache key; pass null to don't cache; return null from this function to use the default key</param>
-    /// <param name="includeDeleted">Whether to include deleted items (applies only to <see cref="Nop.Core.Domain.Common.ISoftDeletedEntity"/> entities)</param>
+    /// <param name="includeDeleted">Whether to include deleted items (applies only to <see cref="Nop.Core.Domain.Common.SoftDeletedEntity"/> entities)</param>
     /// <returns>
     /// A task that represents the asynchronous operation
     /// The task result contains the entity entries
@@ -79,7 +79,7 @@ public partial interface IRepository<TEntity> where TEntity : BaseEntity
     /// </summary>
     /// <param name="func">Function to select entries</param>
     /// <param name="getCacheKey">Function to get a cache key; pass null to don't cache; return null from this function to use the default key</param>
-    /// <param name="includeDeleted">Whether to include deleted items (applies only to <see cref="Nop.Core.Domain.Common.ISoftDeletedEntity"/> entities)</param>
+    /// <param name="includeDeleted">Whether to include deleted items (applies only to <see cref="Nop.Core.Domain.Common.SoftDeletedEntity"/> entities)</param>
     /// <returns>Entity entries</returns>
     IList<TEntity> GetAll(Func<IQueryable<TEntity>, IQueryable<TEntity>> func = null,
         Func<ICacheKeyService, CacheKey> getCacheKey = null, bool includeDeleted = true);
@@ -89,7 +89,7 @@ public partial interface IRepository<TEntity> where TEntity : BaseEntity
     /// </summary>
     /// <param name="func">Function to select entries</param>
     /// <param name="getCacheKey">Function to get a cache key; pass null to don't cache; return null from this function to use the default key</param>
-    /// <param name="includeDeleted">Whether to include deleted items (applies only to <see cref="Nop.Core.Domain.Common.ISoftDeletedEntity"/> entities)</param>
+    /// <param name="includeDeleted">Whether to include deleted items (applies only to <see cref="Nop.Core.Domain.Common.SoftDeletedEntity"/> entities)</param>
     /// <returns>
     /// A task that represents the asynchronous operation
     /// The task result contains the entity entries
@@ -104,7 +104,7 @@ public partial interface IRepository<TEntity> where TEntity : BaseEntity
     /// <param name="pageIndex">Page index</param>
     /// <param name="pageSize">Page size</param>
     /// <param name="getOnlyTotalCount">Whether to get only the total number of entries without actually loading data</param>
-    /// <param name="includeDeleted">Whether to include deleted items (applies only to <see cref="Nop.Core.Domain.Common.ISoftDeletedEntity"/> entities)</param>
+    /// <param name="includeDeleted">Whether to include deleted items (applies only to <see cref="Nop.Core.Domain.Common.SoftDeletedEntity"/> entities)</param>
     /// <returns>
     /// A task that represents the asynchronous operation
     /// The task result contains the paged list of entity entries
@@ -119,7 +119,7 @@ public partial interface IRepository<TEntity> where TEntity : BaseEntity
     /// <param name="pageIndex">Page index</param>
     /// <param name="pageSize">Page size</param>
     /// <param name="getOnlyTotalCount">Whether to get only the total number of entries without actually loading data</param>
-    /// <param name="includeDeleted">Whether to include deleted items (applies only to <see cref="Nop.Core.Domain.Common.ISoftDeletedEntity"/> entities)</param>
+    /// <param name="includeDeleted">Whether to include deleted items (applies only to <see cref="Nop.Core.Domain.Common.SoftDeletedEntity"/> entities)</param>
     /// <returns>
     /// A task that represents the asynchronous operation
     /// The task result contains the paged list of entity entries

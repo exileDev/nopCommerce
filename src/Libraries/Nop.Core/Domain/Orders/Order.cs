@@ -8,7 +8,7 @@ namespace Nop.Core.Domain.Orders;
 /// <summary>
 /// Represents an order
 /// </summary>
-public partial class Order : BaseEntity, ISoftDeletedEntity
+public partial class Order : SoftDeletedEntity
 {
     #region Properties
 
@@ -271,11 +271,6 @@ public partial class Order : BaseEntity, ISoftDeletedEntity
     /// Gets or sets the serialized CustomValues (values from ProcessPaymentRequest)
     /// </summary>
     public string CustomValuesXml { get; set; }
-
-    /// <summary>
-    /// Gets or sets a value indicating whether the entity has been deleted
-    /// </summary>
-    public bool Deleted { get; set; }
 
     /// <summary>
     /// Gets or sets the date and time of order creation

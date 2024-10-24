@@ -6,7 +6,7 @@ namespace Nop.Core.Domain.Orders;
 /// <summary>
 /// Represents a recurring payment
 /// </summary>
-public partial class RecurringPayment : BaseEntity, ISoftDeletedEntity
+public partial class RecurringPayment : SoftDeletedEntity
 {
     /// <summary>
     /// Gets or sets the cycle length
@@ -37,11 +37,6 @@ public partial class RecurringPayment : BaseEntity, ISoftDeletedEntity
     /// Gets or sets a value indicating whether the last payment failed
     /// </summary>
     public bool LastPaymentFailed { get; set; }
-
-    /// <summary>
-    /// Gets or sets a value indicating whether the entity has been deleted
-    /// </summary>
-    public bool Deleted { get; set; }
 
     /// <summary>
     /// Gets or sets the initial order identifier

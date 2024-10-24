@@ -65,6 +65,5 @@ public partial class BaseNameCompatibility : INameCompatibility
         { (typeof(VendorAttributeValue), "AttributeId"), "VendorAttributeId" },
         { (typeof(CustomerAttributeValue), "AttributeId"), "CustomerAttributeId" },
         { (typeof(AddressAttributeValue), "AttributeId"), "AddressAttributeId" },
-        { (typeof(CheckoutAttributeValue), "AttributeId"), "CheckoutAttributeId" },
     };
 }

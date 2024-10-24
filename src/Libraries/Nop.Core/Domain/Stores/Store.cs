@@ -6,7 +6,7 @@ namespace Nop.Core.Domain.Stores;
 /// <summary>
 /// Represents a store
 /// </summary>
-public partial class Store : BaseEntity, ILocalizedEntity, ISoftDeletedEntity
+public partial class Store : SoftDeletedEntity, ILocalizedEntity
 {
     /// <summary>
     /// Gets or sets the store name
@@ -83,8 +83,4 @@ public partial class Store : BaseEntity, ILocalizedEntity, ISoftDeletedEntity
     /// </summary>
     public string CompanyVat { get; set; }
 
-    /// <summary>
-    /// Gets or sets a value indicating whether the entity has been deleted
-    /// </summary>
-    public bool Deleted { get; set; }
 }

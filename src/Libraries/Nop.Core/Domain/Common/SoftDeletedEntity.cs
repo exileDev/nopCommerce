@@ -3,10 +3,10 @@
 /// <summary>
 /// Represents a soft-deleted (without actually deleting from storage) entity
 /// </summary>
-public partial interface ISoftDeletedEntity
+public abstract partial class SoftDeletedEntity : BaseEntity
 {
     /// <summary>
     /// Gets or sets a value indicating whether the entity has been deleted
     /// </summary>
-    bool Deleted { get; set; }
+    public bool Deleted { get; set; }
 }

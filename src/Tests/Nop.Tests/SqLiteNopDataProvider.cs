@@ -17,7 +17,7 @@ namespace Nop.Tests;
 /// <summary>
 /// Represents the SQLite data provider
 /// </summary>
-public partial class SqLiteNopDataProvider : BaseDataProvider, INopDataProvider
+public partial class SqLiteNopDataProvider : BaseSqlDataProvider, INopDataProvider
 {
     #region Consts
 

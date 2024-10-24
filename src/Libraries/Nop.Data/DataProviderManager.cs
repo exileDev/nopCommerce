@@ -24,6 +24,7 @@ public partial class DataProviderManager : IDataProviderManager
             DataProviderType.SqlServer => new MsSqlNopDataProvider(),
             DataProviderType.MySql => new MySqlNopDataProvider(),
             DataProviderType.PostgreSQL => new PostgreSqlDataProvider(),
+            DataProviderType.MongoDb => new MongoDbDataProvider(),
             _ => throw new NopException($"Not supported data provider name: '{dataProviderType}'"),
         };
     }

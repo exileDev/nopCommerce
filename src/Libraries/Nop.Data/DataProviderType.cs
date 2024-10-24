@@ -29,5 +29,11 @@ public enum DataProviderType
     /// PostgreSQL
     /// </summary>
     [EnumMember(Value = "postgresql")]
-    PostgreSQL
+    PostgreSQL,
+
+    /// <summary>
+    /// MongoDB
+    /// </summary>
+    [EnumMember(Value = "mongodb")]
+    MongoDb
 }

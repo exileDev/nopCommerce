@@ -10,6 +10,7 @@ using Nop.Core.Configuration;
 using Nop.Core.Infrastructure;
 using Nop.Data.Extensions;
 using Nop.Data.Migrations;
+using Nop.Data.Migrations.FluentMigrator.Runner.MongoDB;
 
 namespace Nop.Data;
 
@@ -41,7 +42,7 @@ public partial class NopDbStartup : INopStartup
             .AddScoped<IMigrationManager, MigrationManager>()
             .AddSingleton<IConventionSet, NopConventionSet>()
             .ConfigureRunner(rb =>
-                rb.WithVersionTable(new MigrationVersionInfo()).AddSqlServer().AddMySql5().AddPostgres()
+                rb.WithVersionTable(new MigrationVersionInfo()).AddSqlServer().AddMySql5().AddPostgres().AddMongoDb()
                     // define the assembly containing the migrations
                     .ScanIn(mAssemblies).For.Migrations().SetCommandTimeout());
 

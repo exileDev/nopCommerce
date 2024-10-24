@@ -13,7 +13,7 @@ using Nop.Data.Migrations;
 
 namespace Nop.Data.DataProviders;
 
-public abstract partial class BaseDataProvider
+public abstract partial class BaseSqlDataProvider
 {
     #region Utilities
 

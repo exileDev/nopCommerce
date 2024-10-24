@@ -12,7 +12,7 @@ using Nop.Data.Mapping;
 
 namespace Nop.Data.DataProviders;
 
-public partial class MySqlNopDataProvider : BaseDataProvider, INopDataProvider
+public partial class MySqlNopDataProvider : BaseSqlDataProvider, INopDataProvider
 {
     #region Fields
 
